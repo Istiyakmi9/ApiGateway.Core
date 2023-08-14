@@ -20,7 +20,7 @@
   "GlobalConfiguration": {
     "ServiceDiscoveryProvider": {
       "Namespace": "default",
-      "Type": "kube",
+      "Type": "KubernetesServiceDiscoveryProvider",
       "Port": 5000
     }
   }
