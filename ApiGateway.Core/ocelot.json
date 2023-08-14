@@ -10,6 +10,9 @@
         }
       ],
       "ServiceName": "api-databuilder-service",
+      "LoadBalancerOptions": {
+        "Type": "LeastConnection"
+      },
       "UpstreamPathTemplate": "/core/{controller}/{endpointmethod}",
       "UpstreamHttpMethod": [ "Get", "Post", "Put" ]
     }
