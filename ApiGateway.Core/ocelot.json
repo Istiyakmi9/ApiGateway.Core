@@ -13,7 +13,23 @@
       "LoadBalancerOptions": {
         "Type": "LeastConnection"
       },
-      "UpstreamPathTemplate": "/dn/api/{controller}/{endpointmethod}",
+      "UpstreamPathTemplate": "/core/api/{controller}/{endpointmethod}",
+      "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/{controller}/{endpointmethod}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5001
+        }
+      ],
+      "ServiceName": "registration-service",
+      "LoadBalancerOptions": {
+        "Type": "LeastConnection"
+      },
+      "UpstreamPathTemplate": "/registration/api/{controller}/{endpointmethod}",
       "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete" ]
     }
   ],
