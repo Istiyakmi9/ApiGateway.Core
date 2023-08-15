@@ -6,7 +6,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5000
+          "Port": 5001
         }
       ],
       "ServiceName": "api-databuilder-service",
@@ -14,7 +14,7 @@
         "Type": "LeastConnection"
       },
       "UpstreamPathTemplate": "/core/api/{controller}/{endpointmethod}",
-      "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete" ]
+      "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete", "OPTIONS" ]
     },
     {
       "DownstreamPathTemplate": "/api/{controller}/{endpointmethod}",
