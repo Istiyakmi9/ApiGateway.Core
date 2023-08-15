@@ -9,10 +9,10 @@
           "Port": 5001
         }
       ],
-      "ServiceName": "api-databuilder-service",
-      "LoadBalancerOptions": {
-        "Type": "LeastConnection"
-      },
+      //"ServiceName": "api-databuilder-service",
+      //"LoadBalancerOptions": {
+      //  "Type": "LeastConnection"
+      //},
       "UpstreamPathTemplate": "/core/api/{controller}/{endpointmethod}",
       "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete", "OPTIONS" ]
     },
@@ -25,10 +25,10 @@
           "Port": 5001
         }
       ],
-      "ServiceName": "registration-service",
-      "LoadBalancerOptions": {
-        "Type": "LeastConnection"
-      },
+      //"ServiceName": "registration-service",
+      //"LoadBalancerOptions": {
+      //  "Type": "LeastConnection"
+      //},
       "UpstreamPathTemplate": "/registration/api/{controller}/{endpointmethod}",
       "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete" ]
     }
@@ -38,5 +38,11 @@
       "Namespace": "default",
       "Type": "KubernetesServiceDiscoveryProvider"
     }
+  },
+  "JwtSetting": {
+    "Key": "SchoolInMind_secret_key_is__bottomhalf@mi9_01",
+    "Issuer": "onlinedatabuilder",
+    "AccessTokenExpiryTimeInSeconds": 3600,
+    "RefreshTokenExpiryTimeInSeconds": 72
   }
 }

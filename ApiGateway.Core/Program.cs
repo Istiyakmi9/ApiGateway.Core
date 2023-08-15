@@ -1,6 +1,10 @@
+using ApiGateway.Core.MIddleware;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
 using Ocelot.Provider.Kubernetes;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,12 +18,36 @@ builder.Configuration.SetBasePath(builder.Environment.ContentRootPath)
 builder.Services.AddOcelot(builder.Configuration)
     .AddKubernetes();
 
+builder.Services.AddAuthentication(x =>
+{
+    x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+               .AddJwtBearer(x =>
+               {
+                   x.SaveToken = true;
+                   x.RequireHttpsMetadata = false;
+                   x.TokenValidationParameters = new TokenValidationParameters
+                   {
+                       ValidateIssuer = false,
+                       ValidateAudience = false,
+                       ValidateLifetime = true,
+                       ValidateIssuerSigningKey = true,
+                       IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSetting:Key"])),
+                       ClockSkew = TimeSpan.Zero
+                   };
+               });
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 
 app.UseRouting();
-// app.UseAuthorization();
+
+app.UseJwtAuthenticationMiddleware();
+app.UseAuthentication();
+app.UseAuthorization();
+
 
 app.UseEndpoints(endpoints => endpoints.MapControllers());
 app.UseOcelot().Wait();
