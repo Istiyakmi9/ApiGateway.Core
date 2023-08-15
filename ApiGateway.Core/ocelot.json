@@ -13,15 +13,14 @@
       "LoadBalancerOptions": {
         "Type": "LeastConnection"
       },
-      "UpstreamPathTemplate": "/core/{controller}/{endpointmethod}",
-      "UpstreamHttpMethod": [ "Get", "Post", "Put" ]
+      "UpstreamPathTemplate": "/dn/api/{controller}/{endpointmethod}",
+      "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete" ]
     }
   ],
   "GlobalConfiguration": {
     "ServiceDiscoveryProvider": {
       "Namespace": "default",
-      "Type": "KubernetesServiceDiscoveryProvider",
-      "Port": 5000
+      "Type": "KubernetesServiceDiscoveryProvider"
     }
   }
 }
