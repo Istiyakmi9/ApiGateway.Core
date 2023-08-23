@@ -1,4 +1,7 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using ApiGateway.Core.Controllers;
+using ApiGateway.Core.Modal;
+using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
@@ -9,12 +12,15 @@ namespace ApiGateway.Core.MIddleware
         private readonly RequestDelegate _next;
         private IConfiguration _configuration;
         private readonly string TokenName = "Authorization";
+        private readonly MasterConnection _masterConnection;
 
-        public JwtAuthenticationMiddleware(RequestDelegate next, IConfiguration configuration)
+        public JwtAuthenticationMiddleware(RequestDelegate next,
+            IConfiguration configuration,
+            MasterConnection masterConnection)
         {
             _next = next;
             _configuration = configuration;
-
+            _masterConnection = masterConnection;
         }
 
         public async Task Invoke(HttpContext context)
@@ -22,16 +28,24 @@ namespace ApiGateway.Core.MIddleware
             try
             {
                 var authorizationToken = string.Empty;
+                var companyCode = string.Empty;
+
                 Parallel.ForEach(context.Request.Headers, header =>
                 {
                     if (header.Value.FirstOrDefault() != null)
                     {
                         if (header.Key == TokenName)
                             authorizationToken = header.Value.FirstOrDefault();
+                        if (header.Key == "companyCode")
+                            companyCode = header.Value.FirstOrDefault();
                     }
                 });
 
+                string urlPath = context.Request.Path.Value!;
+
                 string userId = string.Empty;
+                string sid = string.Empty;
+                string user = string.Empty;
                 if (!string.IsNullOrEmpty(authorizationToken))
                 {
                     string token = authorizationToken.Replace("Bearer", "").Trim();
@@ -49,8 +63,17 @@ namespace ApiGateway.Core.MIddleware
                             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["jwtSetting:Key"]))
                         }, out SecurityToken validatedToken);
 
-                        // JwtSecurityToken securityToken = handler.ReadToken(token) as JwtSecurityToken;
+                        JwtSecurityToken securityToken = handler.ReadToken(token) as JwtSecurityToken;
+                        ConfigDatabase(context, securityToken);
                     }
+                    else if (!string.IsNullOrEmpty(companyCode))
+                    {
+                        ConfigDatabase(context, companyCode);
+                    }
+                }
+                else if (!string.IsNullOrEmpty(companyCode))
+                {
+                    ConfigDatabase(context, companyCode);
                 }
 
                 await _next(context);
@@ -59,6 +82,40 @@ namespace ApiGateway.Core.MIddleware
             {
                 throw;
             }
+        }
+
+        private void ConfigDatabase(HttpContext context, string companyCode)
+        {
+            var codes = companyCode.Split("-");
+            if (codes.Length != 2)
+            {
+                throw new Exception("Invalid company code found.");
+            }
+
+            DatabaseConfiguration databaseConfiguration = _masterConnection.getDatabaseBasedOnCode(codes[0], codes[1]);
+
+            context.Request.Headers.Add("database", JsonConvert.SerializeObject(databaseConfiguration));
+            context.Request.Headers.Add("JBot", "[]");
+        }
+
+        private void ConfigDatabase(HttpContext context, JwtSecurityToken securityToken)
+        {
+            var user = securityToken.Claims.FirstOrDefault(x => x.Type == "JBot").Value;
+            var companyCode = securityToken.Claims.FirstOrDefault(x => x.Type == "CompanyCode").Value;
+            var sid = securityToken.Claims.FirstOrDefault(x => x.Type == "JBot").Value;
+
+            var codes = companyCode.Split("-");
+            if (codes.Length != 2)
+            {
+                throw new Exception("Invalid company code found.");
+            }
+
+            DatabaseConfiguration databaseConfiguration = _masterConnection.getDatabaseBasedOnCode(codes[0], codes[1]);
+
+            context.Request.Headers.Add("userDetail", user);
+            context.Request.Headers.Add("sid", sid);
+            context.Request.Headers.Add("database", JsonConvert.SerializeObject(databaseConfiguration));
+            context.Request.Headers.Add("companyCode", companyCode);
         }
     }
 
