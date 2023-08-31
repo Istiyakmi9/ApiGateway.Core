@@ -2,6 +2,7 @@ using ApiGateway.Core.Controllers;
 using ApiGateway.Core.MIddleware;
 using ApiGateway.Core.Modal;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
@@ -47,6 +48,13 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 
 app.UseRouting();
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+                   Path.Combine(Directory.GetCurrentDirectory())),
+    RequestPath = "/Files"
+});
 
 app.UseJwtAuthenticationMiddleware();
 app.UseAuthentication();
