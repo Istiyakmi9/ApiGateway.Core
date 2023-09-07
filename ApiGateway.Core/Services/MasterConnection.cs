@@ -4,17 +4,18 @@ using Microsoft.Extensions.Options;
 using MySql.Data.MySqlClient;
 using System.Data;
 
-namespace ApiGateway.Core.Controllers
+namespace ApiGateway.Core.Service
 {
     public class MasterConnection
     {
         private readonly MasterDatabase _masterDatabase;
-        private List<DatabaseConfiguration> databaseConfiguration;
+        private List<DatabaseConfiguration> _databaseConfiguration;
 
         public MasterConnection(IOptions<MasterDatabase> options)
         {
             _masterDatabase = options.Value;
             LoadMasterConnection();
+            _databaseConfiguration = new List<DatabaseConfiguration>();
         }
 
         public void LoadMasterConnection()
@@ -41,7 +42,7 @@ namespace ApiGateway.Core.Controllers
                                 throw new Exception("Fail to load the master data");
                             }
 
-                            databaseConfiguration = Converter.ToList<DatabaseConfiguration>(dataSet.Tables[0]);
+                            _databaseConfiguration = Converter.ToList<DatabaseConfiguration>(dataSet.Tables[0]);
                         }
                     }
                     catch
@@ -52,14 +53,37 @@ namespace ApiGateway.Core.Controllers
             }
         }
 
-        public DatabaseConfiguration getDatabaseBasedOnCode(string orgCode, string companyCode)
+        public DatabaseConfiguration? GetDatabaseBasedOnCode(string orgCode, string companyCode)
         {
-            var config = databaseConfiguration.FirstOrDefault(x => x.OrganizationCode == orgCode && x.Code == companyCode);
-            if (config == null)
+            DatabaseConfiguration? configuration;
+            if (_databaseConfiguration != null)
+            {
+                configuration = _databaseConfiguration!.FirstOrDefault(x => x.OrganizationCode == orgCode && x.Code == companyCode);
+                if (configuration == null)
+                {
+                    LoadMasterConnection();
+                    if (_databaseConfiguration == null)
+                        throw new Exception("Master data configuration detail not found");
+                }
+            }
+            else
             {
                 throw new Exception("Master data configuration detail not found");
             }
-            return config;
+
+            return configuration;
+        }
+
+        public List<DatabaseConfiguration> GetAllConnections()
+        {
+            if (_databaseConfiguration == null)
+            {
+                LoadMasterConnection();
+                if (_databaseConfiguration == null)
+                    throw new Exception("Master data configuration detail not found");
+            }
+
+            return _databaseConfiguration;
         }
     }
 }

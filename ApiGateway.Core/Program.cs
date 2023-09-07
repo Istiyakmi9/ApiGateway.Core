@@ -1,6 +1,7 @@
-using ApiGateway.Core.Controllers;
+using ApiGateway.Core.HostedService;
 using ApiGateway.Core.MIddleware;
 using ApiGateway.Core.Modal;
+using ApiGateway.Core.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
@@ -28,21 +29,22 @@ builder.Services.AddAuthentication(x =>
     x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-               .AddJwtBearer(x =>
-               {
-                   x.SaveToken = true;
-                   x.RequireHttpsMetadata = false;
-                   x.TokenValidationParameters = new TokenValidationParameters
-                   {
-                       ValidateIssuer = false,
-                       ValidateAudience = false,
-                       ValidateLifetime = true,
-                       ValidateIssuerSigningKey = true,
-                       IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSetting:Key"])),
-                       ClockSkew = TimeSpan.Zero
-                   };
-               });
+.AddJwtBearer(x =>
+{
+    x.SaveToken = true;
+    x.RequireHttpsMetadata = false;
+    x.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSetting:Key"])),
+        ClockSkew = TimeSpan.Zero
+    };
+});
 
+builder.Services.AddHostedService<DailyJob>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
