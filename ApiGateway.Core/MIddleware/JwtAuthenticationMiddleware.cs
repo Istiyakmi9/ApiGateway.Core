@@ -43,9 +43,9 @@ namespace ApiGateway.Core.MIddleware
                             _logger.LogInformation($"{TokenName}: {header.Value.FirstOrDefault()}");
                             authorizationToken = header.Value.FirstOrDefault();
                         }
-                        if (header.Key == "companyCode")
+                        if (header.Key.ToLower() == "companycode")
                         {
-                            _logger.LogInformation($"companyCode: {header.Value.FirstOrDefault()}");
+                            _logger.LogInformation($"CompanyCode: {header.Value.FirstOrDefault()}");
                             companyCode = header.Value.FirstOrDefault();
                         }
                     }
