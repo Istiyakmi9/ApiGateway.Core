@@ -35,18 +35,17 @@ namespace ApiGateway.Core.MIddleware
 
                 Parallel.ForEach(context.Request.Headers, header =>
                 {
+                    _logger.LogInformation($"Reading: {TokenName}");
                     if (header.Value.FirstOrDefault() != null)
                     {
                         if (header.Key == TokenName)
-                        {
-                            _logger.LogInformation($"Reading: {TokenName}");
-                            _logger.LogInformation($"{TokenName}: ${header.Value.FirstOrDefault()}");
+                        {                            
+                            _logger.LogInformation($"{TokenName}: {header.Value.FirstOrDefault()}");
                             authorizationToken = header.Value.FirstOrDefault();
                         }
                         if (header.Key == "companyCode")
                         {
-                            _logger.LogInformation($"Reading: companyCode");
-                            _logger.LogInformation($"companyCode: ${header.Value.FirstOrDefault()}");
+                            _logger.LogInformation($"companyCode: {header.Value.FirstOrDefault()}");
                             companyCode = header.Value.FirstOrDefault();
                         }
                     }
