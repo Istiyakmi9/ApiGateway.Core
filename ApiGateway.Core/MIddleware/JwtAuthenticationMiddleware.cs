@@ -35,7 +35,7 @@ namespace ApiGateway.Core.MIddleware
 
                 Parallel.ForEach(context.Request.Headers, header =>
                 {
-                    _logger.LogInformation($"Reading: {TokenName}");
+                    _logger.LogInformation($"Reading: {header.Key}");
                     if (header.Value.FirstOrDefault() != null)
                     {
                         if (header.Key == TokenName)
