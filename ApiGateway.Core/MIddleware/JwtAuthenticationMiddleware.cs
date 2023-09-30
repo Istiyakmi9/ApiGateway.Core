@@ -13,14 +13,17 @@ namespace ApiGateway.Core.MIddleware
         private IConfiguration _configuration;
         private readonly string TokenName = "Authorization";
         private readonly MasterConnection _masterConnection;
+        private readonly ILogger<JwtAuthenticationMiddleware> _logger;
 
         public JwtAuthenticationMiddleware(RequestDelegate next,
             IConfiguration configuration,
-            MasterConnection masterConnection)
+            MasterConnection masterConnection,
+            ILogger<JwtAuthenticationMiddleware> logger)
         {
             _next = next;
             _configuration = configuration;
             _masterConnection = masterConnection;
+            _logger = logger;
         }
 
         public async Task Invoke(HttpContext context)
@@ -35,9 +38,17 @@ namespace ApiGateway.Core.MIddleware
                     if (header.Value.FirstOrDefault() != null)
                     {
                         if (header.Key == TokenName)
+                        {
+                            _logger.LogInformation($"Reading: {TokenName}");
+                            _logger.LogInformation($"{TokenName}: ${header.Value.FirstOrDefault()}");
                             authorizationToken = header.Value.FirstOrDefault();
+                        }
                         if (header.Key == "companyCode")
+                        {
+                            _logger.LogInformation($"Reading: companyCode");
+                            _logger.LogInformation($"companyCode: ${header.Value.FirstOrDefault()}");
                             companyCode = header.Value.FirstOrDefault();
+                        }
                     }
                 });
 

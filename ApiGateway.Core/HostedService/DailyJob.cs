@@ -32,7 +32,7 @@ namespace ApiGateway.Core.HostedService
         {
             _logger.LogInformation("Enabling the logging.");
 
-            _ = Task.Run(() => StartJobAsync(cancellationToken));
+            // _ = Task.Run(() => StartJobAsync(cancellationToken));
             await Task.CompletedTask;
         }
 
