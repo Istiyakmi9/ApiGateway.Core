@@ -8,6 +8,7 @@ FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
 COPY ["ApiGateway.Core/ApiGateway.Core.csproj", "ApiGateway.Core/"]
 RUN dotnet restore "ApiGateway.Core/ApiGateway.Core.csproj"
+ENV ASPNETCORE_ENVIRONMENT Production
 COPY . .
 WORKDIR "/src/ApiGateway.Core"
 RUN dotnet build "ApiGateway.Core.csproj" -c Release -o /app/build
