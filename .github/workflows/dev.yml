@@ -38,4 +38,4 @@ jobs:
       with:
         push: true
         file: Dockerfile-dev
-        tags: istiyaqmi9/apigateway.core:latest
+        tags: istiyaqmi9/apigateway.core:dev
