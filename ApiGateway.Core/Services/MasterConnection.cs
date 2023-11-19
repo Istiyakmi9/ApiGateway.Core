@@ -10,22 +10,17 @@ namespace ApiGateway.Core.Service
     {
         private readonly MasterDatabase _masterDatabase;
         private List<DatabaseConfiguration> _databaseConfiguration;
-        private ILogger<MasterConnection> _logger;
 
-        public MasterConnection(IOptions<MasterDatabase> options, ILogger<MasterConnection> logger)
+        public MasterConnection(IOptions<MasterDatabase> options)
         {
             _masterDatabase = options.Value;
             LoadMasterConnection();
             _databaseConfiguration = new List<DatabaseConfiguration>();
-            _logger = logger;
         }
 
         public void LoadMasterConnection()
         {
             string cs = $"server={_masterDatabase.Server};port={_masterDatabase.Port};database={_masterDatabase.Database};User Id={_masterDatabase.User_Id};password={_masterDatabase.Password};Connection Timeout={_masterDatabase.Connection_Timeout};Connection Lifetime={_masterDatabase.Connection_Lifetime};Min Pool Size={_masterDatabase.Min_Pool_Size};Max Pool Size={_masterDatabase.Max_Pool_Size};Pooling={_masterDatabase.Pooling};";
-
-            _logger.LogInformation($"[DATABASE]: Connection to server: {_masterDatabase.Server}:{_masterDatabase.Port}");
-
             using (var connection = new MySqlConnection(cs))
             {
                 using (MySqlCommand command = new MySqlCommand())
@@ -47,13 +42,11 @@ namespace ApiGateway.Core.Service
                                 throw new Exception("Fail to load the master data");
                             }
 
-                            _logger.LogError($"[DATABASE]: Record count: {dataSet.Tables.Count}");
                             _databaseConfiguration = Converter.ToList<DatabaseConfiguration>(dataSet.Tables[0]);
                         }
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        _logger.LogError($"[DATABASE]: Msg: {ex.Message}");
                         throw;
                     }
                 }
