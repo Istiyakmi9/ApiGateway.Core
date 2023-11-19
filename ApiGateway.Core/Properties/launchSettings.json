@@ -10,6 +10,16 @@
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5000"
     },
+    "ApiGateway.Core Staging": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "weatherforecast",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Staging"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "http://localhost:5000"
+    },
     "ApiGateway.Core Prod": {
       "commandName": "Project",
       "launchBrowser": true,
