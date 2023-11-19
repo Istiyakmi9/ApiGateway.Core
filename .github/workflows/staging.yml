@@ -37,5 +37,5 @@ jobs:
       uses: docker/build-push-action@v2      
       with:
         push: true
-        file: Dockerfile-dev
-        tags: istiyaqmi9/apigateway.core:dev
+        file: Dockerfile-staging
+        tags: istiyaqmi9/apigateway.core:staging
