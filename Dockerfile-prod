@@ -9,9 +9,6 @@ WORKDIR /src
 COPY ["ApiGateway.Core/ApiGateway.Core.csproj", "ApiGateway.Core/"]
 RUN dotnet restore "ApiGateway.Core/ApiGateway.Core.csproj"
 
-CMD ["echo", "Starting Dockerfile-Production"]
-ENV ASPNETCORE_ENVIRONMENT Production
-
 COPY . .
 WORKDIR "/src/ApiGateway.Core"
 RUN dotnet build "ApiGateway.Core.csproj" -c Release -o /app/build
@@ -22,4 +19,4 @@ RUN dotnet publish "ApiGateway.Core.csproj" -c Release -o /app/publish /p:UseApp
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "ApiGateway.Core.dll"]
+ENTRYPOINT ["dotnet", "ApiGateway.Core.dll", "--environment=Production"]
