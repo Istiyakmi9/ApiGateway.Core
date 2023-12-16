@@ -3,6 +3,7 @@ using ApiGateway.Core.Service;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Text;
 
 namespace ApiGateway.Core.MIddleware
@@ -86,6 +87,7 @@ namespace ApiGateway.Core.MIddleware
                     ConfigDatabase(context, companyCode);
                 }
 
+                _logger.LogInformation($"[REQUEST HEADER]: {JsonConvert.SerializeObject(context.Request.Headers["database"])}");
                 await _next(context);
             }
             catch (Exception)
@@ -102,7 +104,7 @@ namespace ApiGateway.Core.MIddleware
                 throw new Exception("Invalid company code found.");
             }
 
-            DatabaseConfiguration? databaseConfiguration = _masterConnection.GetDatabaseBasedOnCode(codes[0], codes[1]);
+            DatabaseConfiguration databaseConfiguration = _masterConnection.GetDatabaseBasedOnCode(codes[0], codes[1]);
 
             context.Request.Headers.Add("database", JsonConvert.SerializeObject(databaseConfiguration));
             context.Request.Headers.Add("JBot", "[]");
@@ -120,7 +122,7 @@ namespace ApiGateway.Core.MIddleware
                 throw new Exception("Invalid company code found.");
             }
 
-            DatabaseConfiguration? databaseConfiguration = _masterConnection.GetDatabaseBasedOnCode(codes[0], codes[1]);
+            DatabaseConfiguration databaseConfiguration = _masterConnection.GetDatabaseBasedOnCode(codes[0], codes[1]);
 
             context.Request.Headers.Add("userDetail", user);
             context.Request.Headers.Add("sid", sid);
