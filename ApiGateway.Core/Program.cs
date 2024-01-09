@@ -46,7 +46,7 @@ builder.Services.AddAuthentication(x =>
     };
 });
 
-builder.Services.AddHostedService<DailyJob>();
+// builder.Services.AddHostedService<DailyJob>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
