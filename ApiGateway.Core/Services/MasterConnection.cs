@@ -53,9 +53,9 @@ namespace ApiGateway.Core.Service
             }
         }
 
-        public DatabaseConfiguration? GetDatabaseBasedOnCode(string orgCode, string companyCode)
+        public DatabaseConfiguration GetDatabaseBasedOnCode(string orgCode, string companyCode)
         {
-            DatabaseConfiguration? configuration;
+            DatabaseConfiguration configuration = null;
             if (_databaseConfiguration != null)
             {
                 configuration = _databaseConfiguration!.FirstOrDefault(x => x.OrganizationCode == orgCode && x.Code == companyCode);
@@ -63,12 +63,23 @@ namespace ApiGateway.Core.Service
                 {
                     LoadMasterConnection();
                     if (_databaseConfiguration == null)
+                    {
                         throw new Exception("Master data configuration detail not found");
+                    }
+                    else
+                    {
+                        configuration = _databaseConfiguration!.FirstOrDefault(x => x.OrganizationCode == orgCode && x.Code == companyCode);
+                        if (configuration == null)
+                        {
+                            throw new Exception("Invalid organization access. Please contact to admin.");
+                        }
+                    }
                 }
-            }
-            else
-            {
-                throw new Exception("Master data configuration detail not found");
+                else
+                {
+                    throw new Exception("Master data configuration detail not found");
+                }
+
             }
 
             return configuration;
