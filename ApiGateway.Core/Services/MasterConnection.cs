@@ -75,11 +75,6 @@ namespace ApiGateway.Core.Service
                         }
                     }
                 }
-                else
-                {
-                    throw new Exception("Master data configuration detail not found");
-                }
-
             }
 
             return configuration;
