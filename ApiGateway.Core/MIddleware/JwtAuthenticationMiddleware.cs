@@ -98,13 +98,14 @@ namespace ApiGateway.Core.MIddleware
 
         private void ConfigDatabase(HttpContext context, string companyCode)
         {
-            var codes = companyCode.Split("-");
-            if (codes.Length != 2)
+            var companyName = companyCode.Substring(0, 3);
+            var code = companyCode.Substring(3);
+            if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(companyName))
             {
                 throw new Exception("Invalid company code found.");
             }
 
-            DatabaseConfiguration databaseConfiguration = _masterConnection.GetDatabaseBasedOnCode(codes[0], codes[1]);
+            DatabaseConfiguration databaseConfiguration = _masterConnection.GetDatabaseBasedOnCode(companyName, code);
 
             context.Request.Headers.Add("database", JsonConvert.SerializeObject(databaseConfiguration));
             context.Request.Headers.Add("JBot", "[]");
@@ -116,13 +117,14 @@ namespace ApiGateway.Core.MIddleware
             var companyCode = securityToken.Claims.FirstOrDefault(x => x.Type == "CompanyCode").Value;
             var sid = securityToken.Claims.FirstOrDefault(x => x.Type == "JBot").Value;
 
-            var codes = companyCode.Split("-");
-            if (codes.Length != 2)
+            var companyName = companyCode.Substring(0, 3);
+            var code = companyCode.Substring(3);
+            if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(companyName))
             {
                 throw new Exception("Invalid company code found.");
             }
 
-            DatabaseConfiguration databaseConfiguration = _masterConnection.GetDatabaseBasedOnCode(codes[0], codes[1]);
+            DatabaseConfiguration databaseConfiguration = _masterConnection.GetDatabaseBasedOnCode(companyName, code);
 
             context.Request.Headers.Add("userDetail", user);
             context.Request.Headers.Add("sid", sid);
