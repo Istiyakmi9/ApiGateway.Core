@@ -18,8 +18,9 @@ namespace ApiGateway.Core.Service
             _databaseConfiguration = new List<DatabaseConfiguration>();
         }
 
-        public void LoadMasterConnection()
+        public bool LoadMasterConnection()
         {
+            var flag = false;
             string cs = $"server={_masterDatabase.Server};port={_masterDatabase.Port};database={_masterDatabase.Database};User Id={_masterDatabase.User_Id};password={_masterDatabase.Password};Connection Timeout={_masterDatabase.Connection_Timeout};Connection Lifetime={_masterDatabase.Connection_Lifetime};Min Pool Size={_masterDatabase.Min_Pool_Size};Max Pool Size={_masterDatabase.Max_Pool_Size};Pooling={_masterDatabase.Pooling};";
             using (var connection = new MySqlConnection(cs))
             {
@@ -43,6 +44,7 @@ namespace ApiGateway.Core.Service
                             }
 
                             _databaseConfiguration = Converter.ToList<DatabaseConfiguration>(dataSet.Tables[0]);
+                            flag = true;
                         }
                     }
                     catch
@@ -51,6 +53,7 @@ namespace ApiGateway.Core.Service
                     }
                 }
             }
+            return flag;
         }
 
         public DatabaseConfiguration GetDatabaseBasedOnCode(string orgCode, string companyCode)
