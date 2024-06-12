@@ -3,7 +3,6 @@ using ApiGateway.Core.Service;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Text;
 
 namespace ApiGateway.Core.MIddleware
