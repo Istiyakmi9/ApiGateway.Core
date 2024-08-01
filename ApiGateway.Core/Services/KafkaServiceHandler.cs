@@ -4,7 +4,6 @@ using ApiGateway.Core.Service;
 using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using Bot.CoreBottomHalf.CommonModal.Kafka;
-using BottomhalfCore.Services.Interface;
 using Confluent.Kafka;
 using ems_CommonUtility.MicroserviceHttpRequest;
 using ems_CommonUtility.Model;
@@ -13,7 +12,6 @@ using ModalLayer;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using System.Net;
-using System.Security.Policy;
 
 namespace ApiGateway.Core.Services
 {
@@ -68,7 +66,7 @@ namespace ApiGateway.Core.Services
                         if (message != null && !string.IsNullOrEmpty(message.Message.Value))
                         {
                             _logger.LogInformation(message.Message.Value);
-                            await RunJobAsync(message.Message.Value);
+                            await RunJobAsync(null);
                         }
                     }
                     catch (Exception ex)
@@ -98,7 +96,7 @@ namespace ApiGateway.Core.Services
             {
                 try
                 {
-                    CreateRequestObject(payload, x);
+                    await CreateRequestObject(payload, x);
                     switch (kafkaPayload.kafkaServiceName)
                     {
                         case KafkaServiceName.MonthlyLeaveAccrualJob:
@@ -125,48 +123,100 @@ namespace ApiGateway.Core.Services
             }
         }
 
-        private MicroserviceRequest CreateRequestObject(string payload, DbConfigModal dbConfig)
+        private async Task<MicroserviceRequest> CreateRequestObject(string payload, DbConfigModal dbConfig)
         {
             MicroserviceRequest microserviceRequest = MicroserviceRequest.Builder(string.Empty);
             microserviceRequest.Database = dbConfig;
             microserviceRequest.Payload = payload;
+            microserviceRequest.CompanyCode = dbConfig.OrganizationCode + dbConfig.Code;
+            microserviceRequest.Token = await GetJwtToken(dbConfig);
 
             return microserviceRequest;
+        }
+
+        private async Task<string> GetJwtToken(DbConfigModal dbConfig)
+        {
+            MicroserviceRequest microserviceRequest = MicroserviceRequest.Builder(string.Empty);
+            microserviceRequest.Url = $"{_microserviceRegistry.GenerateJWtToken}/{dbConfig.OrganizationCode + dbConfig.Code}";
+            microserviceRequest.CompanyCode = dbConfig.OrganizationCode + dbConfig.Code;
+            microserviceRequest.Token = "";
+            microserviceRequest.Database = dbConfig;
+
+            return await GetRequest<string>(microserviceRequest);
         }
 
         public async Task CallLeaveAccrualJobAsync(string payload)
         {
             string url = $"{_microserviceRegistry.RunPayroll}/{true}";
-            await _requestMicroservice.GetRequest<string>(MicroserviceRequest.Builder(url, payload, ));
+            await _requestMicroservice.GetRequest<string>(MicroserviceRequest.Builder(url));
         }
 
         public async Task CallTimesheetJobAsync(string payload)
         {
             string url = $"{_microserviceRegistry.RunPayroll}/{true}";
-            await _requestMicroservice.GetRequest<string>(MicroserviceRequest.Builder(url, payload));
+            await _requestMicroservice.GetRequest<string>(MicroserviceRequest.Builder(url));
         }
 
         public async Task CallPayrollJobAsync(string payload)
         {
             string url = $"{_microserviceRegistry.RunPayroll}/{true}";
-            await _requestMicroservice.GetRequest<string>(MicroserviceRequest.Builder(url, payload));
+            await _requestMicroservice.GetRequest<string>(MicroserviceRequest.Builder(url));
         }
 
         public async Task CallLeaveYearEndJobAsync(string payload)
         {
             string url = $"{_microserviceRegistry.RunPayroll}/{true}";
-            await _requestMicroservice.GetRequest<string>(MicroserviceRequest.Builder(url, payload));
+            await _requestMicroservice.GetRequest<string>(MicroserviceRequest.Builder(url));
         }
 
         public async Task CallGenerateAttendanceAsync(string payload)
         {
             string url = $"{_microserviceRegistry.RunPayroll}/{true}";
-            await _requestMicroservice.GetRequest<string>(MicroserviceRequest.Builder(url, payload));
+            await _requestMicroservice.GetRequest<string>(MicroserviceRequest.Builder(url));
         }
 
         public Task SendEmailNotification(dynamic attendanceRequestModal)
         {
             throw new NotImplementedException();
+        }
+
+        public async Task<T> GetRequest<T>(MicroserviceRequest microserviceRequest)
+        {
+            try
+            {
+                using HttpClient httpClient = new HttpClient();
+                HttpResponseMessage httpResponseMessage = await httpClient.GetAsync(microserviceRequest.Url);
+                httpResponseMessage.EnsureSuccessStatusCode();
+                return await GetResponseBody<T>(httpResponseMessage);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        private async Task<T> GetResponseBody<T>(HttpResponseMessage httpResponseMessage)
+        {
+            try
+            {
+                string response = await httpResponseMessage.Content.ReadAsStringAsync();
+                if (httpResponseMessage.Content.Headers.ContentType.MediaType != "application/json")
+                {
+                    throw HiringBellException.ThrowBadRequest("Fail to get http call to salary and declaration service.");
+                }
+
+                MicroserviceResponse<T> apiResponse = JsonConvert.DeserializeObject<MicroserviceResponse<T>>(response);
+                if (apiResponse == null || apiResponse.ResponseBody == null)
+                {
+                    throw HiringBellException.ThrowBadRequest("Fail to get http call to salary and declaration service.");
+                }
+
+                return apiResponse.ResponseBody;
+            }
+            catch
+            {
+                throw;
+            }
         }
     }
 }

@@ -19,7 +19,7 @@ namespace ApiGateway.Core.Service
             _dbConfigModal = new List<DbConfigModal>();
         }
 
-        public List<DbConfigModal> GetDatabaseConfiguration { get {  return _dbConfigModal; } }
+        public List<DbConfigModal> GetDatabaseConfiguration { get { return _dbConfigModal; } }
 
         public bool LoadMasterConnection()
         {
@@ -59,22 +59,22 @@ namespace ApiGateway.Core.Service
             return flag;
         }
 
-        public DatabaseConfiguration GetDatabaseBasedOnCode(string orgCode, string companyCode)
+        public DbConfigModal GetDatabaseBasedOnCode(string orgCode, string companyCode)
         {
-            DatabaseConfiguration configuration = null;
-            if (_databaseConfiguration != null)
+            DbConfigModal configuration = null;
+            if (_dbConfigModal != null)
             {
-                configuration = _databaseConfiguration!.FirstOrDefault(x => x.OrganizationCode == orgCode && x.Code == companyCode);
+                configuration = _dbConfigModal!.FirstOrDefault(x => x.OrganizationCode == orgCode && x.Code == companyCode);
                 if (configuration == null)
                 {
                     LoadMasterConnection();
-                    if (_databaseConfiguration == null)
+                    if (_dbConfigModal == null)
                     {
                         throw new Exception("Master data configuration detail not found");
                     }
                     else
                     {
-                        configuration = _databaseConfiguration!.FirstOrDefault(x => x.OrganizationCode == orgCode && x.Code == companyCode);
+                        configuration = _dbConfigModal!.FirstOrDefault(x => x.OrganizationCode == orgCode && x.Code == companyCode);
                         if (configuration == null)
                         {
                             throw new Exception("Invalid organization access. Please contact to admin.");
@@ -86,16 +86,16 @@ namespace ApiGateway.Core.Service
             return configuration;
         }
 
-        public List<DatabaseConfiguration> GetAllConnections()
+        public List<DbConfigModal> GetAllConnections()
         {
-            if (_databaseConfiguration == null)
+            if (_dbConfigModal == null)
             {
                 LoadMasterConnection();
-                if (_databaseConfiguration == null)
+                if (_dbConfigModal == null)
                     throw new Exception("Master data configuration detail not found");
             }
 
-            return _databaseConfiguration;
+            return _dbConfigModal;
         }
     }
 }
