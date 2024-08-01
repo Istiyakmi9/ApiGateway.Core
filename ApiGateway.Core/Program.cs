@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
 using Ocelot.Provider.Kubernetes;
+using System.Configuration;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,6 +26,8 @@ builder.Services.AddOcelot(builder.Configuration)
 
 
 builder.Services.Configure<MasterDatabase>(x => builder.Configuration.GetSection(nameof(MasterDatabase)).Bind(x));
+builder.Services.Configure<MicroserviceRegistry>(x => builder.Configuration.GetSection(nameof(MicroserviceRegistry)).Bind(x));
+
 builder.Services.AddSingleton<MasterConnection>();
 builder.Services.AddAuthentication(x =>
 {

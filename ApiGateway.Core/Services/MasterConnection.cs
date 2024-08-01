@@ -18,6 +18,8 @@ namespace ApiGateway.Core.Service
             _databaseConfiguration = new List<DatabaseConfiguration>();
         }
 
+        public List<DatabaseConfiguration> GetDatabaseConfiguration { get {  return _databaseConfiguration; } }
+
         public bool LoadMasterConnection()
         {
             var flag = false;
