@@ -1,7 +1,6 @@
-﻿using ApiGateway.Core.Modal;
-using ApiGateway.Core.Service;
+﻿using ApiGateway.Core.Service;
+using Bot.CoreBottomHalf.CommonModal;
 using NCrontab;
-using System.Threading;
 
 namespace ApiGateway.Core.HostedService
 {
@@ -59,9 +58,9 @@ namespace ApiGateway.Core.HostedService
             using (IServiceScope scope = _serviceProvider.CreateScope())
             {
                 MasterConnection masterConnection = scope.ServiceProvider.GetRequiredService<MasterConnection>();
-                List<DatabaseConfiguration> connections = masterConnection.GetAllConnections();
+                List<DbConfigModal> connections = masterConnection.GetAllConnections();
 
-                foreach (DatabaseConfiguration connection in connections)
+                foreach (DbConfigModal connection in connections)
                 {
 
                 }
