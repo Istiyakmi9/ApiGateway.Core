@@ -1,4 +1,5 @@
 ﻿using ApiGateway.Core.Modal;
+using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.Services.Code;
 using Microsoft.Extensions.Options;
 using MySql.Data.MySqlClient;
@@ -9,16 +10,16 @@ namespace ApiGateway.Core.Service
     public class MasterConnection
     {
         private readonly MasterDatabase _masterDatabase;
-        private List<DatabaseConfiguration> _databaseConfiguration;
+        private List<DbConfigModal> _dbConfigModal;
 
         public MasterConnection(IOptions<MasterDatabase> options)
         {
             _masterDatabase = options.Value;
             LoadMasterConnection();
-            _databaseConfiguration = new List<DatabaseConfiguration>();
+            _dbConfigModal = new List<DbConfigModal>();
         }
 
-        public List<DatabaseConfiguration> GetDatabaseConfiguration { get {  return _databaseConfiguration; } }
+        public List<DbConfigModal> GetDatabaseConfiguration { get {  return _dbConfigModal; } }
 
         public bool LoadMasterConnection()
         {
@@ -45,7 +46,7 @@ namespace ApiGateway.Core.Service
                                 throw new Exception("Fail to load the master data");
                             }
 
-                            _databaseConfiguration = Converter.ToList<DatabaseConfiguration>(dataSet.Tables[0]);
+                            _dbConfigModal = Converter.ToList<DbConfigModal>(dataSet.Tables[0]);
                             flag = true;
                         }
                     }

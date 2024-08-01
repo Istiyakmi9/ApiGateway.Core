@@ -1,4 +1,5 @@
-﻿using ApiGateway.Core.Modal;
+﻿using ApiGateway.Core.Interface;
+using ApiGateway.Core.Modal;
 using ApiGateway.Core.Service;
 using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
@@ -12,32 +13,27 @@ using ModalLayer;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 using System.Net;
+using System.Security.Policy;
 
 namespace ApiGateway.Core.Services
 {
-    public class KafkaServiceHandler
+    public class KafkaServiceHandler : IKafkaServiceHandler
     {
         private readonly ILogger<KafkaServiceHandler> _logger;
-        private readonly MasterDatabase _masterDatabase;
         private readonly List<KafkaServiceConfig> _kafkaServiceConfig;
-        private readonly ITimezoneConverter _timezoneConverter;
         private readonly RequestMicroservice _requestMicroservice;
         private readonly MicroserviceRegistry _microserviceRegistry;
         private readonly MasterConnection _masterConnection;
 
         public KafkaServiceHandler(
             ILogger<KafkaServiceHandler> logger,
-            IOptions<MasterDatabase> options,
             IOptions<List<KafkaServiceConfig>> kafkaOptions,
-            ITimezoneConverter timezoneConverter,
             IOptions<MicroserviceRegistry> microserviceOptions,
             RequestMicroservice requestMicroservice,
             MasterConnection masterConnection)
         {
             _logger = logger;
-            _masterDatabase = options.Value;
             _kafkaServiceConfig = kafkaOptions.Value;
-            _timezoneConverter = timezoneConverter;
             _microserviceRegistry = microserviceOptions.Value;
             _requestMicroservice = requestMicroservice;
             _masterConnection = masterConnection;
@@ -88,7 +84,7 @@ namespace ApiGateway.Core.Services
         public async Task RunJobAsync(string payload)
         {
             KafkaPayload kafkaPayload = JsonConvert.DeserializeObject<KafkaPayload>(payload);
-            List<DatabaseConfiguration> dbConfig = new List<DatabaseConfiguration>(); ;
+            List<DbConfigModal> dbConfig = new List<DbConfigModal>(); ;
 
             // Load all database configuration from master database
             if (_masterConnection.GetDatabaseConfiguration == null || _masterConnection.GetDatabaseConfiguration.Count == 0)
@@ -102,6 +98,7 @@ namespace ApiGateway.Core.Services
             {
                 try
                 {
+                    CreateRequestObject(payload, x);
                     switch (kafkaPayload.kafkaServiceName)
                     {
                         case KafkaServiceName.MonthlyLeaveAccrualJob:
@@ -128,10 +125,19 @@ namespace ApiGateway.Core.Services
             }
         }
 
+        private MicroserviceRequest CreateRequestObject(string payload, DbConfigModal dbConfig)
+        {
+            MicroserviceRequest microserviceRequest = MicroserviceRequest.Builder(string.Empty);
+            microserviceRequest.Database = dbConfig;
+            microserviceRequest.Payload = payload;
+
+            return microserviceRequest;
+        }
+
         public async Task CallLeaveAccrualJobAsync(string payload)
         {
             string url = $"{_microserviceRegistry.RunPayroll}/{true}";
-            await _requestMicroservice.GetRequest<string>(MicroserviceRequest.Builder(url, payload));
+            await _requestMicroservice.GetRequest<string>(MicroserviceRequest.Builder(url, payload, ));
         }
 
         public async Task CallTimesheetJobAsync(string payload)
@@ -156,6 +162,11 @@ namespace ApiGateway.Core.Services
         {
             string url = $"{_microserviceRegistry.RunPayroll}/{true}";
             await _requestMicroservice.GetRequest<string>(MicroserviceRequest.Builder(url, payload));
+        }
+
+        public Task SendEmailNotification(dynamic attendanceRequestModal)
+        {
+            throw new NotImplementedException();
         }
     }
 }
