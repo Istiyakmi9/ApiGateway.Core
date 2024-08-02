@@ -66,7 +66,7 @@ namespace ApiGateway.Core.Services
                         if (message != null && !string.IsNullOrEmpty(message.Message.Value))
                         {
                             _logger.LogInformation(message.Message.Value);
-                            await RunJobAsync(null);
+                            await RunJobAsync(message.Message.Value);
                         }
                     }
                     catch (Exception ex)
@@ -82,7 +82,6 @@ namespace ApiGateway.Core.Services
         public async Task RunJobAsync(string payload)
         {
             KafkaPayload kafkaPayload = JsonConvert.DeserializeObject<KafkaPayload>(payload);
-            List<DbConfigModal> dbConfig = new List<DbConfigModal>(); ;
 
             // Load all database configuration from master database
             if (_masterConnection.GetDatabaseConfiguration == null || _masterConnection.GetDatabaseConfiguration.Count == 0)
@@ -90,29 +89,29 @@ namespace ApiGateway.Core.Services
                 _masterConnection.LoadMasterConnection();
             }
 
-            dbConfig = _masterConnection.GetDatabaseConfiguration;
+            List<DbConfigModal> dbConfig = _masterConnection.GetDatabaseConfiguration;
 
             foreach (var x in dbConfig)
             {
                 try
                 {
-                    await CreateRequestObject(payload, x);
+                    var microserviceRequest = await CreateRequestObject(kafkaPayload.Message, x);
                     switch (kafkaPayload.kafkaServiceName)
                     {
                         case KafkaServiceName.MonthlyLeaveAccrualJob:
-                            await CallLeaveAccrualJobAsync(payload);
+                            await CallLeaveAccrualJobAsync(microserviceRequest);
                             break;
                         case KafkaServiceName.WeeklyTimesheetJob:
-                            await CallTimesheetJobAsync(payload);
+                            await CallTimesheetJobAsync(microserviceRequest);
                             break;
                         case KafkaServiceName.MonthlyPayrollJob:
-                            await CallPayrollJobAsync(payload);
+                            await CallPayrollJobAsync(microserviceRequest);
                             break;
                         case KafkaServiceName.YearEndLeaveProcessingJob:
-                            await CallLeaveYearEndJobAsync(payload);
+                            await CallLeaveYearEndJobAsync(microserviceRequest);
                             break;
                         case KafkaServiceName.NewRegistration:
-                            await CallGenerateAttendanceAsync(payload);
+                            await CallGenerateAttendanceAsync(microserviceRequest);
                             break;
                     }
                 }
@@ -123,100 +122,68 @@ namespace ApiGateway.Core.Services
             }
         }
 
-        private async Task<MicroserviceRequest> CreateRequestObject(string payload, DbConfigModal dbConfig)
+        private async Task<MicroserviceRequest> CreateRequestObject(string payloadMessage, DbConfigModal dbConfig)
         {
             MicroserviceRequest microserviceRequest = MicroserviceRequest.Builder(string.Empty);
             microserviceRequest.Database = dbConfig;
-            microserviceRequest.Payload = payload;
-            microserviceRequest.CompanyCode = dbConfig.OrganizationCode + dbConfig.Code;
+            microserviceRequest.Payload = payloadMessage;
+            microserviceRequest.CompanyCode = $"{dbConfig.OrganizationCode}{dbConfig.Code}";
             microserviceRequest.Token = await GetJwtToken(dbConfig);
 
+            if (string.IsNullOrEmpty(microserviceRequest.Token))
+            {
+                throw HiringBellException.ThrowBadRequest("Invalid token received");
+            }
+
+            microserviceRequest.Token = $"{ApplicationConstants.JWTBearer} {microserviceRequest.Token}";
             return microserviceRequest;
         }
 
         private async Task<string> GetJwtToken(DbConfigModal dbConfig)
         {
             MicroserviceRequest microserviceRequest = MicroserviceRequest.Builder(string.Empty);
-            microserviceRequest.Url = $"{_microserviceRegistry.GenerateJWtToken}/{dbConfig.OrganizationCode + dbConfig.Code}";
+            microserviceRequest.Url = _microserviceRegistry.GenerateJWtToken;
             microserviceRequest.CompanyCode = dbConfig.OrganizationCode + dbConfig.Code;
-            microserviceRequest.Token = "";
+            microserviceRequest.Token = ApplicationConstants.JWTBearer;
             microserviceRequest.Database = dbConfig;
+            microserviceRequest.Payload = JsonConvert.SerializeObject(new CurrentSession { CompanyCode = microserviceRequest.CompanyCode });
 
-            return await GetRequest<string>(microserviceRequest);
+            return await _requestMicroservice.PostRequest<string>(microserviceRequest);
         }
 
-        public async Task CallLeaveAccrualJobAsync(string payload)
+        public async Task CallLeaveAccrualJobAsync(MicroserviceRequest microserviceRequest)
         {
-            string url = $"{_microserviceRegistry.RunPayroll}/{true}";
-            await _requestMicroservice.GetRequest<string>(MicroserviceRequest.Builder(url));
+            microserviceRequest.Url = $"{_microserviceRegistry.RunPayroll}/{true}";
+            await _requestMicroservice.GetRequest<string>(microserviceRequest);
         }
 
-        public async Task CallTimesheetJobAsync(string payload)
+        public async Task CallTimesheetJobAsync(MicroserviceRequest microserviceRequest)
         {
-            string url = $"{_microserviceRegistry.RunPayroll}/{true}";
-            await _requestMicroservice.GetRequest<string>(MicroserviceRequest.Builder(url));
+            microserviceRequest.Url = $"{_microserviceRegistry.RunPayroll}/{true}";
+            await _requestMicroservice.GetRequest<string>(microserviceRequest);
         }
 
-        public async Task CallPayrollJobAsync(string payload)
+        public async Task CallPayrollJobAsync(MicroserviceRequest microserviceRequest)
         {
-            string url = $"{_microserviceRegistry.RunPayroll}/{true}";
-            await _requestMicroservice.GetRequest<string>(MicroserviceRequest.Builder(url));
+            microserviceRequest.Url = $"{_microserviceRegistry.RunPayroll}/{DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss")}";
+            await _requestMicroservice.GetRequest<string>(microserviceRequest);
         }
 
-        public async Task CallLeaveYearEndJobAsync(string payload)
+        public async Task CallLeaveYearEndJobAsync(MicroserviceRequest microserviceRequest)
         {
-            string url = $"{_microserviceRegistry.RunPayroll}/{true}";
-            await _requestMicroservice.GetRequest<string>(MicroserviceRequest.Builder(url));
+            microserviceRequest.Url = $"{_microserviceRegistry.RunPayroll}/{true}";
+            await _requestMicroservice.GetRequest<string>(microserviceRequest);
         }
 
-        public async Task CallGenerateAttendanceAsync(string payload)
+        public async Task CallGenerateAttendanceAsync(MicroserviceRequest microserviceRequest)
         {
-            string url = $"{_microserviceRegistry.RunPayroll}/{true}";
-            await _requestMicroservice.GetRequest<string>(MicroserviceRequest.Builder(url));
+            microserviceRequest.Url = $"{_microserviceRegistry.RunPayroll}/{true}";
+            await _requestMicroservice.GetRequest<string>(microserviceRequest);
         }
 
         public Task SendEmailNotification(dynamic attendanceRequestModal)
         {
             throw new NotImplementedException();
-        }
-
-        public async Task<T> GetRequest<T>(MicroserviceRequest microserviceRequest)
-        {
-            try
-            {
-                using HttpClient httpClient = new HttpClient();
-                HttpResponseMessage httpResponseMessage = await httpClient.GetAsync(microserviceRequest.Url);
-                httpResponseMessage.EnsureSuccessStatusCode();
-                return await GetResponseBody<T>(httpResponseMessage);
-            }
-            catch
-            {
-                throw;
-            }
-        }
-
-        private async Task<T> GetResponseBody<T>(HttpResponseMessage httpResponseMessage)
-        {
-            try
-            {
-                string response = await httpResponseMessage.Content.ReadAsStringAsync();
-                if (httpResponseMessage.Content.Headers.ContentType.MediaType != "application/json")
-                {
-                    throw HiringBellException.ThrowBadRequest("Fail to get http call to salary and declaration service.");
-                }
-
-                MicroserviceResponse<T> apiResponse = JsonConvert.DeserializeObject<MicroserviceResponse<T>>(response);
-                if (apiResponse == null || apiResponse.ResponseBody == null)
-                {
-                    throw HiringBellException.ThrowBadRequest("Fail to get http call to salary and declaration service.");
-                }
-
-                return apiResponse.ResponseBody;
-            }
-            catch
-            {
-                throw;
-            }
         }
     }
 }
