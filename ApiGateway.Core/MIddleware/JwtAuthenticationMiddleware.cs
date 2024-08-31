@@ -33,6 +33,13 @@ namespace ApiGateway.Core.MIddleware
                 var authorizationToken = string.Empty;
                 var companyCode = string.Empty;
 
+                if (context.Request.Method == HttpMethods.Options)
+                {
+                    // Handle OPTIONS request here
+                    context.Response.StatusCode = StatusCodes.Status200OK;
+                    return;
+                }
+
                 Parallel.ForEach(context.Request.Headers, header =>
                 {
                     _logger.LogInformation($"Reading: {header.Key}");

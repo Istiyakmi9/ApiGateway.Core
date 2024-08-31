@@ -1,24 +1,23 @@
 ﻿using ApiGateway.Core.HostedService;
 using ApiGateway.Core.Interface;
-using ApiGateway.Core.Modal;
+using ApiGateway.Core.MIddleware;
 using ApiGateway.Core.Service;
 using ApiGateway.Core.Services;
-using Bot.CoreBottomHalf.CommonModal.Enums;
 using Bot.CoreBottomHalf.CommonModal;
+using Bot.CoreBottomHalf.CommonModal.Enums;
 using Confluent.Kafka;
 using ems_CommonUtility.KafkaService.code;
 using ems_CommonUtility.KafkaService.interfaces;
 using ems_CommonUtility.MicroserviceHttpRequest;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using ModalLayer;
-using System.Text;
 using Ocelot.DependencyInjection;
-using Ocelot.Provider.Kubernetes;
-using ApiGateway.Core.MIddleware;
-using Microsoft.Extensions.FileProviders;
 using Ocelot.Middleware;
+using Ocelot.Provider.Kubernetes;
+using System.Text;
 
 namespace ApiGateway.Core.Configuration
 {
@@ -30,6 +29,8 @@ namespace ApiGateway.Core.Configuration
             IWebHostEnvironment _environment = _builder.Environment;
 
             services.AddControllers();
+
+            ConfiguraCORS(services);
 
             // configure appsettings file
             ConfiguraAppSettingFiles(_configuration, _environment);
@@ -55,7 +56,21 @@ namespace ApiGateway.Core.Configuration
 
         }
 
-        private static void RegisterServices(IServiceCollection services, IWebHostEnvironment _environment)
+        private void ConfiguraCORS(IServiceCollection services)
+        {
+            services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy",
+                    builder => builder
+                        .AllowAnyOrigin()
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .WithExposedHeaders("Content-Disposition") // if you want to expose specific headers
+                        .SetPreflightMaxAge(TimeSpan.FromMinutes(10))); // Cache the preflight response
+            });
+        }
+
+        private void RegisterServices(IServiceCollection services, IWebHostEnvironment _environment)
         {
             services.AddSingleton<MasterConnection>();
             services.AddScoped((IServiceProvider x) => new CurrentSession
@@ -126,6 +141,7 @@ namespace ApiGateway.Core.Configuration
             });
 
             // Configure the HTTP request pipeline.
+            app.UseCors("CorsPolicy");
 
             app.UseRouting();
 
