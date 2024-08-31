@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace ApiGateway.Core.Controllers
+namespace ApiGateway.Core.Controller
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     public class WeatherForecastController : ControllerBase
     {
         private static readonly string[] Summaries = new[]

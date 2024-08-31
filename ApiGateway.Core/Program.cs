@@ -20,9 +20,17 @@ using Ocelot.Provider.Kubernetes;
 using System.Configuration;
 using System.Text;
 using ApiGateway.Core.Interface;
+using ApiGateway.Core.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var startup = new Startup(builder);
+startup.ConfigureService(builder.Services);
+
+startup.ConfigurePipeline(builder.Build());
+
+
+/*
 // Add services to the container.
 builder.Services.AddControllers();
 
@@ -57,6 +65,12 @@ builder.Services.AddAuthentication(x =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSetting:Key"])),
         ClockSkew = TimeSpan.Zero
     };
+});
+
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.ListenAnyIP(5000);
+    serverOptions.Listen(System.Net.IPAddress.Parse("192.168.1.100"), 5000);
 });
 
 builder.Services.AddScoped((IServiceProvider x) => new CurrentSession
@@ -108,7 +122,7 @@ app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(
                    Path.Combine(Directory.GetCurrentDirectory())),
-    RequestPath = "/Files"
+    RequestPath = "/bt/resources"
 });
 
 app.UseJwtAuthenticationMiddleware();
@@ -116,10 +130,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 
-app.UseEndpoints(endpoints => endpoints.MapControllers());
 app.UseOcelot().Wait();
-
 
 app.MapControllers();
 
 app.Run();
+*/
