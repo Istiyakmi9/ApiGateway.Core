@@ -149,7 +149,7 @@ namespace ApiGateway.Core.Configuration
             {
                 FileProvider = new PhysicalFileProvider(
                                Path.Combine(Directory.GetCurrentDirectory())),
-                RequestPath = "/bt/resources"
+                RequestPath = "/bts/resources/emstum"
             });
 
             app.UseJwtAuthenticationMiddleware();
