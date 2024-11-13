@@ -23,7 +23,7 @@ namespace ApiGateway.Core.Configuration
                 builder.WebHost.ConfigureKestrel(serverOptions =>
                 {
                     serverOptions.ListenAnyIP(5000);
-                    serverOptions.Listen(System.Net.IPAddress.Parse("192.168.1.100"), 5000);
+                    serverOptions.Listen(System.Net.IPAddress.Parse("192.168.0.139"), 5000);
                 });
             }
         }
