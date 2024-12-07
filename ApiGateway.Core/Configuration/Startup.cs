@@ -5,13 +5,14 @@ using ApiGateway.Core.Service;
 using ApiGateway.Core.Services;
 using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.Enums;
+using bt_lib_common_services.Configserver;
+using bt_lib_common_services.KafkaService.code;
+using bt_lib_common_services.KafkaService.interfaces;
+using bt_lib_common_services.MicroserviceHttpRequest;
+using bt_lib_common_services.Model;
 using Confluent.Kafka;
-using ems_CommonUtility.KafkaService.code;
-using ems_CommonUtility.KafkaService.interfaces;
-using ems_CommonUtility.MicroserviceHttpRequest;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using ModalLayer;
 using Ocelot.DependencyInjection;
@@ -50,7 +51,7 @@ namespace ApiGateway.Core.Configuration
             RegisterServices(services, _environment);
 
             //Kafka Service
-            RegisterKafkaService(services, _configuration, _environment);
+            RegisterKafkaService(services, _configuration);
 
             services.AddHostedService<DailyJob>();
 
@@ -79,22 +80,25 @@ namespace ApiGateway.Core.Configuration
             });
             services.AddScoped<RequestMicroservice>();
             services.AddScoped<IKafkaServiceHandler, KafkaServiceHandler>();
+            services.AddSingleton<IFetchGithubConfigurationService>(x =>
+                FetchGithubConfigurationService.getInstance(GitRepositories.EMS_CONFIG_SERVICE).GetAwaiter().GetResult()
+            );
         }
 
-        private void RegisterKafkaService(IServiceCollection services, ConfigurationManager _configuration, IWebHostEnvironment _environment)
+        private void RegisterKafkaService(IServiceCollection services, ConfigurationManager _configuration)
         {
+            services.Configure(delegate (JwtSetting o)
+            {
+                _configuration.GetSection("JwtSetting").Bind(o);
+            });
+            services.Configure(delegate (List<KafkaServiceConfig> x)
+            {
+                _configuration.GetSection("KafkaServiceConfig").Bind(x);
+            });
             ProducerConfig producerConfig = new ProducerConfig();
             _configuration.Bind("KafkaServerDetail", producerConfig);
             services.AddSingleton(producerConfig);
-            services.AddSingleton((Func<IServiceProvider, IKafkaNotificationService>)
-                ((IServiceProvider x) =>
-                new KafkaNotificationService(
-                    x.GetRequiredService<IOptions<List<KafkaServiceConfig>>>(),
-                    x.GetRequiredService<ProducerConfig>(),
-                    x.GetRequiredService<ILogger<KafkaNotificationService>>(),
-                    (!(_environment.EnvironmentName == "Development")) ?
-                    DefinedEnvironments.Production : DefinedEnvironments.Development)
-                ));
+            services.AddSingleton((Func<IServiceProvider, IKafkaProducerService>)((IServiceProvider x) => new KafkaProducerService(FetchGithubConfigurationService.getInstance(GitRepositories.EMS_CONFIG_SERVICE).Result, x.GetRequiredService<ProducerConfig>())));
         }
 
         private void ConfiguraAppSettingFiles(ConfigurationManager _configuration, IWebHostEnvironment _environment)
