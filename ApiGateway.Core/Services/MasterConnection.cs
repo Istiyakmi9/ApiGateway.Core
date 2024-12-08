@@ -1,6 +1,7 @@
 ﻿using ApiGateway.Core.Modal;
 using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.Services.Code;
+using bt_lib_common_services.Configserver;
 using Microsoft.Extensions.Options;
 using MySql.Data.MySqlClient;
 using System.Data;
@@ -11,12 +12,13 @@ namespace ApiGateway.Core.Service
     {
         private readonly MasterDatabase _masterDatabase;
         private List<DbConfigModal> _dbConfigModal;
-
-        public MasterConnection(IOptions<MasterDatabase> options)
+        private readonly IFetchGithubConfigurationService _fetchGithubConfigurationService;
+        public MasterConnection(IOptions<MasterDatabase> options, IFetchGithubConfigurationService fetchGithubConfigurationService)
         {
             _masterDatabase = options.Value;
-            LoadMasterConnection();
             _dbConfigModal = new List<DbConfigModal>();
+            _fetchGithubConfigurationService = fetchGithubConfigurationService;
+            LoadMasterConnection();
         }
 
         public List<DbConfigModal> GetDatabaseConfiguration { get { return _dbConfigModal; } }
@@ -24,7 +26,8 @@ namespace ApiGateway.Core.Service
         public bool LoadMasterConnection()
         {
             var flag = false;
-            string cs = $"server={_masterDatabase.Server};port={_masterDatabase.Port};database={_masterDatabase.Database};User Id={_masterDatabase.User_Id};password={_masterDatabase.Password};Connection Timeout={_masterDatabase.Connection_Timeout};Connection Lifetime={_masterDatabase.Connection_Lifetime};Min Pool Size={_masterDatabase.Min_Pool_Size};Max Pool Size={_masterDatabase.Max_Pool_Size};Pooling={_masterDatabase.Pooling};";
+            var  config = _fetchGithubConfigurationService.GetDatabaseConfiguration().Result;
+            var cs = $"server={config.Server};port={config.Port};database={config.Database};User Id={config.User_Id};password={config.Password};Connection Timeout={config.Connection_Timeout};Connection Lifetime={config.Connection_Lifetime};Min Pool Size={config.Min_Pool_Size};Max Pool Size={config.Max_Pool_Size};Pooling={config.Pooling};";
             using (var connection = new MySqlConnection(cs))
             {
                 using (MySqlCommand command = new MySqlCommand())
