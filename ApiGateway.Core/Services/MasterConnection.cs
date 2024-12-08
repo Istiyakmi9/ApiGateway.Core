@@ -1,8 +1,8 @@
 ﻿using ApiGateway.Core.Modal;
 using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.Services.Code;
-using bt_lib_common_services.Configserver;
-using bt_lib_common_services.Model;
+using Bt.Lib.Common.Service.Configserver;
+using Bt.Lib.Common.Service.Model;
 using Microsoft.Extensions.Options;
 using MySql.Data.MySqlClient;
 using System.Data;
