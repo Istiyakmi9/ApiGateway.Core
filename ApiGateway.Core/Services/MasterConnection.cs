@@ -2,6 +2,7 @@
 using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.Services.Code;
 using bt_lib_common_services.Configserver;
+using bt_lib_common_services.Model;
 using Microsoft.Extensions.Options;
 using MySql.Data.MySqlClient;
 using System.Data;
@@ -26,8 +27,8 @@ namespace ApiGateway.Core.Service
         public bool LoadMasterConnection()
         {
             var flag = false;
-            var  config = _fetchGithubConfigurationService.GetDatabaseConfiguration().Result;
-            var cs = $"server={config.Server};port={config.Port};database={config.Database};User Id={config.User_Id};password={config.Password};Connection Timeout={config.Connection_Timeout};Connection Lifetime={config.Connection_Lifetime};Min Pool Size={config.Min_Pool_Size};Max Pool Size={config.Max_Pool_Size};Pooling={config.Pooling};";
+            var cs = DatabaseConfiguration.BuildConnectionString(_fetchGithubConfigurationService.GetDatabaseConfiguration().Result);
+
             using (var connection = new MySqlConnection(cs))
             {
                 using (MySqlCommand command = new MySqlCommand())
