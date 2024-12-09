@@ -7,6 +7,7 @@ using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.Enums;
 using Bt.Lib.Common.Service.Configserver;
 using Bt.Lib.Common.Service.KafkaService.code;
+using Bt.Lib.Common.Service.KafkaService.code.Producer;
 using Bt.Lib.Common.Service.KafkaService.interfaces;
 using Bt.Lib.Common.Service.MicroserviceHttpRequest;
 using Bt.Lib.Common.Service.Model;
@@ -81,7 +82,7 @@ namespace ApiGateway.Core.Configuration
             services.AddScoped<RequestMicroservice>();
             services.AddScoped<IKafkaServiceHandler, KafkaServiceHandler>();
             services.AddSingleton<IFetchGithubConfigurationService>(x =>
-                FetchGithubConfigurationService.getInstance(GitRepositories.EMS_CONFIG_SERVICE).GetAwaiter().GetResult()
+                FetchGithubConfigurationService.getInstance(ApplicationNames.EMSTUM).GetAwaiter().GetResult()
             );
         }
 
@@ -98,7 +99,7 @@ namespace ApiGateway.Core.Configuration
             ProducerConfig producerConfig = new ProducerConfig();
             _configuration.Bind("KafkaServerDetail", producerConfig);
             services.AddSingleton(producerConfig);
-            services.AddSingleton((Func<IServiceProvider, IKafkaProducerService>)((IServiceProvider x) => new KafkaProducerService(FetchGithubConfigurationService.getInstance(GitRepositories.EMS_CONFIG_SERVICE).Result, x.GetRequiredService<ProducerConfig>())));
+            services.AddSingleton((Func<IServiceProvider, IKafkaProducerService>)((IServiceProvider x) => KafkaProducerService.SubscribeKafkaService(ApplicationNames.EMSTUM, x.GetRequiredService<ProducerConfig>())));
         }
 
         private void ConfiguraAppSettingFiles(ConfigurationManager _configuration, IWebHostEnvironment _environment)
