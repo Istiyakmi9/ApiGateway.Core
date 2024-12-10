@@ -27,7 +27,7 @@ namespace ApiGateway.Core.Service
         public bool LoadMasterConnection()
         {
             var flag = false;
-            var cs = DatabaseConfiguration.BuildConnectionString(_fetchGithubConfigurationService.GetDatabaseConfiguration().Result);
+            var cs = DatabaseConfiguration.BuildConnectionString(_fetchGithubConfigurationService.GetConfiguration<DatabaseConfiguration>());
 
             using (var connection = new MySqlConnection(cs))
             {

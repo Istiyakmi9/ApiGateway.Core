@@ -82,7 +82,9 @@ namespace ApiGateway.Core.Configuration
             services.AddScoped<RequestMicroservice>();
             services.AddScoped<IKafkaServiceHandler, KafkaServiceHandler>();
             services.AddSingleton<IFetchGithubConfigurationService>(x =>
-                FetchGithubConfigurationService.getInstance(ApplicationNames.EMSTUM).GetAwaiter().GetResult()
+                FetchGithubConfigurationService
+                .getInstance()
+                .Init(ApplicationNames.EMSTUM)
             );
         }
 
