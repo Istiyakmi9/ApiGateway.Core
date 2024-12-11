@@ -52,7 +52,7 @@ namespace ApiGateway.Core.Configuration
             RegisterServices(services, _environment);
 
             //Kafka Service
-            RegisterKafkaService(services, _configuration);
+            RegisterKafkaService(services, _configuration, _environment);
 
             services.AddHostedService<DailyJob>();
 
@@ -84,11 +84,11 @@ namespace ApiGateway.Core.Configuration
             services.AddSingleton<IFetchGithubConfigurationService>(x =>
                 FetchGithubConfigurationService
                 .getInstance()
-                .Init(ApplicationNames.EMSTUM)
+                .Init(ApplicationNames.EMSTUM, _environment)
             );
         }
 
-        private void RegisterKafkaService(IServiceCollection services, ConfigurationManager _configuration)
+        private void RegisterKafkaService(IServiceCollection services, ConfigurationManager _configuration, IWebHostEnvironment _environment)
         {
             services.Configure(delegate (JwtSetting o)
             {
@@ -101,7 +101,7 @@ namespace ApiGateway.Core.Configuration
             ProducerConfig producerConfig = new ProducerConfig();
             _configuration.Bind("KafkaServerDetail", producerConfig);
             services.AddSingleton(producerConfig);
-            services.AddSingleton((Func<IServiceProvider, IKafkaProducerService>)((IServiceProvider x) => KafkaProducerService.SubscribeKafkaService(ApplicationNames.EMSTUM, x.GetRequiredService<ProducerConfig>())));
+            services.AddSingleton((Func<IServiceProvider, IKafkaProducerService>)((IServiceProvider x) => KafkaProducerService.SubscribeKafkaService(ApplicationNames.EMSTUM, x.GetRequiredService<ProducerConfig>(), _environment)));
         }
 
         private void ConfiguraAppSettingFiles(ConfigurationManager _configuration, IWebHostEnvironment _environment)
