@@ -52,7 +52,7 @@ namespace ApiGateway.Core.Configuration
             RegisterServices(services, _environment);
 
             //Kafka Service
-            RegisterKafkaService(services, _configuration);
+            RegisterKafkaService(services, _configuration, _environment);
 
             services.AddHostedService<DailyJob>();
 
@@ -88,7 +88,7 @@ namespace ApiGateway.Core.Configuration
             );
         }
 
-        private void RegisterKafkaService(IServiceCollection services, ConfigurationManager _configuration)
+        private void RegisterKafkaService(IServiceCollection services, ConfigurationManager _configuration, IWebHostEnvironment _environment)
         {
             services.Configure(delegate (JwtSetting o)
             {
