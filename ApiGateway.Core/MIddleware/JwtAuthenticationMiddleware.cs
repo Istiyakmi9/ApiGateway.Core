@@ -1,6 +1,7 @@
 ﻿using ApiGateway.Core.Service;
 using Bot.CoreBottomHalf.CommonModal;
 using Microsoft.IdentityModel.Tokens;
+using ModalLayer.Modal;
 using Newtonsoft.Json;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
@@ -106,9 +107,9 @@ namespace ApiGateway.Core.MIddleware
         {
             var companyName = companyCode.Substring(0, 3);
             var code = companyCode.Substring(3);
-            if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(companyName))
+            if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(companyName) || companyCode.Length != 8)
             {
-                throw new Exception("Invalid company code found.");
+                throw HiringBellException.ThrowBadRequest("Invalid company code found.");
             }
 
             DbConfigModal databaseConfiguration = _masterConnection.GetDatabaseBasedOnCode(companyName, code);
@@ -125,9 +126,9 @@ namespace ApiGateway.Core.MIddleware
 
             var companyName = companyCode.Substring(0, 3);
             var code = companyCode.Substring(3);
-            if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(companyName))
+            if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(companyName) || companyCode.Length != 8)
             {
-                throw new Exception("Invalid company code found.");
+                throw HiringBellException.ThrowBadRequest("Invalid company code found.");
             }
 
             DbConfigModal databaseConfiguration = _masterConnection.GetDatabaseBasedOnCode(companyName, code);
