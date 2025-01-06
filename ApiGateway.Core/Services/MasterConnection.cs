@@ -4,6 +4,7 @@ using BottomhalfCore.Services.Code;
 using Bt.Lib.Common.Service.Configserver;
 using Bt.Lib.Common.Service.Model;
 using Microsoft.Extensions.Options;
+using ModalLayer.Modal;
 using MySql.Data.MySqlClient;
 using System.Data;
 
@@ -74,14 +75,14 @@ namespace ApiGateway.Core.Service
                     LoadMasterConnection();
                     if (_dbConfigModal == null)
                     {
-                        throw new Exception("Master data configuration detail not found");
+                        throw HiringBellException.ThrowBadRequest("Master data configuration detail not found");
                     }
                     else
                     {
                         configuration = _dbConfigModal!.FirstOrDefault(x => x.OrganizationCode == orgCode && x.Code == companyCode);
                         if (configuration == null)
                         {
-                            throw new Exception("Invalid organization access. Please contact to admin.");
+                            throw HiringBellException.ThrowBadRequest("Invalid organization access. Please contact to admin.");
                         }
                     }
                 }

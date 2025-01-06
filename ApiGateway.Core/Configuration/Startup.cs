@@ -9,6 +9,7 @@ using Bt.Lib.Common.Service.Configserver;
 using Bt.Lib.Common.Service.KafkaService.code.Producer;
 using Bt.Lib.Common.Service.KafkaService.interfaces;
 using Bt.Lib.Common.Service.MicroserviceHttpRequest;
+using Bt.Lib.Common.Service.Middlewares;
 using Bt.Lib.Common.Service.Model;
 using Confluent.Kafka;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -78,6 +79,7 @@ namespace ApiGateway.Core.Configuration
                 Environment = ((!(_environment.EnvironmentName == "Development")) ? DefinedEnvironments.Production : DefinedEnvironments.Development)
             });
             services.AddScoped<RequestMicroservice>();
+            services.AddSingleton<ApplicationConfiguration>();
             services.AddScoped<IKafkaServiceHandler, KafkaServiceHandler>();
         }
 
@@ -168,7 +170,7 @@ namespace ApiGateway.Core.Configuration
                                Path.Combine(Directory.GetCurrentDirectory())),
                 RequestPath = "/bts/resources"
             });
-
+            app.UseMiddleware<ExceptionHandlerMiddleware>();
             app.UseJwtAuthenticationMiddleware();
             app.UseAuthentication();
             app.UseAuthorization();
