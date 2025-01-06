@@ -1,5 +1,6 @@
 ﻿using ApiGateway.Core.Service;
 using Bot.CoreBottomHalf.CommonModal;
+using Bt.Lib.Common.Service.Model;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System.IdentityModel.Tokens.Jwt;
@@ -10,20 +11,20 @@ namespace ApiGateway.Core.MIddleware
     public class JwtAuthenticationMiddleware
     {
         private readonly RequestDelegate _next;
-        private IConfiguration _configuration;
         private readonly string TokenName = "Authorization";
         private readonly MasterConnection _masterConnection;
         private readonly ILogger<JwtAuthenticationMiddleware> _logger;
+        private readonly PublicKeyDetail _publicKeyDetail;
 
         public JwtAuthenticationMiddleware(RequestDelegate next,
-            IConfiguration configuration,
             MasterConnection masterConnection,
-            ILogger<JwtAuthenticationMiddleware> logger)
+            ILogger<JwtAuthenticationMiddleware> logger,
+            PublicKeyDetail publicKeyDetail)
         {
             _next = next;
-            _configuration = configuration;
             _masterConnection = masterConnection;
             _logger = logger;
+            _publicKeyDetail = publicKeyDetail;
         }
 
         public async Task Invoke(HttpContext context)
@@ -46,7 +47,7 @@ namespace ApiGateway.Core.MIddleware
                     if (header.Value.FirstOrDefault() != null)
                     {
                         if (header.Key == TokenName)
-                        {                            
+                        {
                             _logger.LogInformation($"{TokenName}: {header.Value.FirstOrDefault()}");
                             authorizationToken = header.Value.FirstOrDefault();
                         }
@@ -75,9 +76,9 @@ namespace ApiGateway.Core.MIddleware
                             ValidateAudience = false,
                             ValidateLifetime = false,
                             ValidateIssuerSigningKey = true,
-                            ValidIssuer = _configuration["jwtSetting:Issuer"],
-                            ValidAudience = _configuration["jwtSetting:Issuer"],
-                            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["jwtSetting:Key"]))
+                            ValidIssuer = _publicKeyDetail.Issuer,
+                            ValidAudience = _publicKeyDetail.Issuer,
+                            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_publicKeyDetail.Key))
                         }, out SecurityToken validatedToken);
 
                         JwtSecurityToken securityToken = handler.ReadToken(token) as JwtSecurityToken;
