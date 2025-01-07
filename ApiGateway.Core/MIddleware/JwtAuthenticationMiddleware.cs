@@ -87,12 +87,12 @@ namespace ApiGateway.Core.MIddleware
                     }
                     else if (!string.IsNullOrEmpty(companyCode))
                     {
-                        ConfigDatabase(context, companyCode);
+                        await ConfigDatabase(context, companyCode);
                     }
                 }
                 else if (!string.IsNullOrEmpty(companyCode))
                 {
-                    ConfigDatabase(context, companyCode);
+                    await ConfigDatabase(context, companyCode);
                 }
 
                 _logger.LogInformation($"[REQUEST HEADER]: {JsonConvert.SerializeObject(context.Request.Headers["database"])}");
@@ -104,7 +104,7 @@ namespace ApiGateway.Core.MIddleware
             }
         }
 
-        private void ConfigDatabase(HttpContext context, string companyCode)
+        private async Task ConfigDatabase(HttpContext context, string companyCode)
         {
             var companyName = companyCode.Substring(0, 3);
             var code = companyCode.Substring(3);
@@ -113,13 +113,13 @@ namespace ApiGateway.Core.MIddleware
                 throw HiringBellException.ThrowBadRequest("Invalid company code found.");
             }
 
-            DbConfigModal databaseConfiguration = _masterConnection.GetDatabaseBasedOnCode(companyName, code);
+            DbConfigModal databaseConfiguration = await _masterConnection.GetDatabaseBasedOnCode(companyName, code);
 
             context.Request.Headers.Add("database", JsonConvert.SerializeObject(databaseConfiguration));
             context.Request.Headers.Add("JBot", "[]");
         }
 
-        private void ConfigDatabase(HttpContext context, JwtSecurityToken securityToken)
+        private async Task ConfigDatabase(HttpContext context, JwtSecurityToken securityToken)
         {
             var user = securityToken.Claims.FirstOrDefault(x => x.Type == "JBot").Value;
             var companyCode = securityToken.Claims.FirstOrDefault(x => x.Type == "CompanyCode").Value;
@@ -132,7 +132,7 @@ namespace ApiGateway.Core.MIddleware
                 throw HiringBellException.ThrowBadRequest("Invalid company code found.");
             }
 
-            DbConfigModal databaseConfiguration = _masterConnection.GetDatabaseBasedOnCode(companyName, code);
+            DbConfigModal databaseConfiguration = await _masterConnection.GetDatabaseBasedOnCode(companyName, code);
 
             context.Request.Headers.Add("userDetail", user);
             context.Request.Headers.Add("sid", sid);

@@ -1,11 +1,13 @@
 ﻿using ApiGateway.Core.Modal;
 using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.Services.Code;
-using Bt.Lib.Common.Service.Configserver;
+using Bt.Lib.Common.Service.MicroserviceHttpRequest;
 using Bt.Lib.Common.Service.Model;
+using Bt.Lib.Common.Service.Services;
 using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using MySql.Data.MySqlClient;
+using Newtonsoft.Json;
 using System.Data;
 
 namespace ApiGateway.Core.Service
@@ -14,21 +16,26 @@ namespace ApiGateway.Core.Service
     {
         private readonly MasterDatabase _masterDatabase;
         private List<DbConfigModal> _dbConfigModal;
-        private readonly IFetchGithubConfigurationService _fetchGithubConfigurationService;
-        public MasterConnection(IOptions<MasterDatabase> options, IFetchGithubConfigurationService fetchGithubConfigurationService)
+        private DatabaseConfiguration _databaseConfiguration;
+        private readonly GitHubConnector _gitHubConnector;
+        private readonly string _dbConfigUrl;
+
+        public MasterConnection(string url, IOptions<MasterDatabase> options)
         {
             _masterDatabase = options.Value;
+            _dbConfigUrl = url;
+            _gitHubConnector = new GitHubConnector();
             _dbConfigModal = new List<DbConfigModal>();
-            _fetchGithubConfigurationService = fetchGithubConfigurationService;
-            LoadMasterConnection();
+            LoadMasterConnection().GetAwaiter().GetResult();
         }
 
         public List<DbConfigModal> GetDatabaseConfiguration { get { return _dbConfigModal; } }
 
-        public bool LoadMasterConnection()
+        public async Task<bool> LoadMasterConnection()
         {
             var flag = false;
-            var cs = DatabaseConfiguration.BuildConnectionString(_fetchGithubConfigurationService.GetConfiguration<DatabaseConfiguration>());
+            _databaseConfiguration = await _gitHubConnector.FetchTypedConfiguraitonAsync<DatabaseConfiguration>(_dbConfigUrl);
+            var cs = DatabaseConfiguration.BuildConnectionString(_databaseConfiguration);
 
             using (var connection = new MySqlConnection(cs))
             {
@@ -64,7 +71,7 @@ namespace ApiGateway.Core.Service
             return flag;
         }
 
-        public DbConfigModal GetDatabaseBasedOnCode(string orgCode, string companyCode)
+        public async Task<DbConfigModal> GetDatabaseBasedOnCode(string orgCode, string companyCode)
         {
             DbConfigModal configuration = null;
             if (_dbConfigModal != null)
@@ -72,7 +79,7 @@ namespace ApiGateway.Core.Service
                 configuration = _dbConfigModal!.FirstOrDefault(x => x.OrganizationCode == orgCode && x.Code == companyCode);
                 if (configuration == null)
                 {
-                    LoadMasterConnection();
+                    await LoadMasterConnection();
                     if (_dbConfigModal == null)
                     {
                         throw HiringBellException.ThrowBadRequest("Master data configuration detail not found");
@@ -91,11 +98,11 @@ namespace ApiGateway.Core.Service
             return configuration;
         }
 
-        public List<DbConfigModal> GetAllConnections()
+        public async Task<List<DbConfigModal>> GetAllConnections()
         {
             if (_dbConfigModal == null)
             {
-                LoadMasterConnection();
+                await LoadMasterConnection();
                 if (_dbConfigModal == null)
                     throw new Exception("Master data configuration detail not found");
             }

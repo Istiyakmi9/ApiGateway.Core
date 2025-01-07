@@ -1,7 +1,9 @@
-﻿namespace ApiGateway.Core.Interface
+﻿using Confluent.Kafka;
+
+namespace ApiGateway.Core.Interface
 {
     public interface IKafkaServiceHandler
     {
-        Task ScheduledJobManager();
+        Task DailyJobManager(ConsumeResult<Ignore, string> result);
     }
 }

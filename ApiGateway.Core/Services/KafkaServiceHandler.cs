@@ -1,5 +1,4 @@
 ﻿using ApiGateway.Core.Interface;
-using ApiGateway.Core.Modal;
 using ApiGateway.Core.Service;
 using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
@@ -11,7 +10,6 @@ using Microsoft.Extensions.Options;
 using ModalLayer;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
-using System.Net;
 
 namespace ApiGateway.Core.Services
 {
@@ -37,56 +35,14 @@ namespace ApiGateway.Core.Services
             _masterConnection = masterConnection;
         }
 
-        public async Task ScheduledJobManager()
+        public async Task DailyJobManager(ConsumeResult<Ignore, string> result)
         {
-            var kafkaConfig = _kafkaServiceConfig.Find(x => x.Topic == LocalConstants.DailyJobsManager);
-            if (kafkaConfig == null)
-            {
-                throw new HiringBellException($"No configuration found for the kafka", "service name", LocalConstants.DailyJobsManager, HttpStatusCode.InternalServerError);
-            }
-
-            var config = new ConsumerConfig
-            {
-                GroupId = kafkaConfig.GroupId,
-                BootstrapServers = $"{kafkaConfig.ServiceName}:{kafkaConfig.Port}"
-            };
-
-            _logger.LogInformation($"[Kafka] Start listening kafka topic: {kafkaConfig.Topic}");
-            using (var consumer = new ConsumerBuilder<Null, string>(config).Build())
-            {
-                consumer.Subscribe(kafkaConfig.Topic);
-                while (true)
-                {
-                    try
-                    {
-                        _logger.LogInformation($"[Kafka] Waiting on topic: {kafkaConfig.Topic}");
-                        var message = consumer.Consume();
-
-                        _logger.LogInformation($"[Kafka] Message received: {message}");
-                        if (message != null && !string.IsNullOrEmpty(message.Message.Value))
-                        {
-                            _logger.LogInformation(message.Message.Value);
-                            await RunJobAsync(message.Message.Value);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError($"[Kafka Error]: Got exception - {ex.Message}");
-                    }
-
-                    await Task.CompletedTask;
-                }
-            }
-        }
-
-        public async Task RunJobAsync(string payload)
-        {
-            KafkaPayload kafkaPayload = JsonConvert.DeserializeObject<KafkaPayload>(payload);
+            KafkaPayload kafkaPayload = JsonConvert.DeserializeObject<KafkaPayload>(result.Message.Value);
 
             // Load all database configuration from master database
             if (_masterConnection.GetDatabaseConfiguration == null || _masterConnection.GetDatabaseConfiguration.Count == 0)
             {
-                _masterConnection.LoadMasterConnection();
+                await _masterConnection.LoadMasterConnection();
             }
 
             List<DbConfigModal> dbConfig = _masterConnection.GetDatabaseConfiguration;

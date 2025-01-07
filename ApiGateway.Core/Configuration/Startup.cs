@@ -1,24 +1,20 @@
-﻿using ApiGateway.Core.HostedService;
-using ApiGateway.Core.Interface;
+﻿using ApiGateway.Core.Interface;
 using ApiGateway.Core.MIddleware;
+using ApiGateway.Core.Modal;
 using ApiGateway.Core.Service;
 using ApiGateway.Core.Services;
 using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.Enums;
-using Bt.Lib.Common.Service.Configserver;
-using Bt.Lib.Common.Service.KafkaService.code.Producer;
 using Bt.Lib.Common.Service.KafkaService.interfaces;
 using Bt.Lib.Common.Service.MicroserviceHttpRequest;
 using Bt.Lib.Common.Service.Middlewares;
 using Bt.Lib.Common.Service.Model;
-using Confluent.Kafka;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Bt.Lib.Common.Service.Services;
 using Microsoft.Extensions.FileProviders;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Options;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
 using Ocelot.Provider.Kubernetes;
-using System.Text;
 
 namespace ApiGateway.Core.Configuration
 {
@@ -29,51 +25,56 @@ namespace ApiGateway.Core.Configuration
             ConfigurationManager _configuration = _builder.Configuration;
             IWebHostEnvironment _environment = _builder.Environment;
 
-            services.AddControllers();
-
-            ConfiguraCORS(services);
-
             // configure appsettings file
             ConfiguraAppSettingFiles(_configuration, _environment);
-
-            services.AddOcelot(_configuration).AddKubernetes();
 
             // load configuration from appsettings.{env}.json file and mapped into classes
             LoadConfigurration.LoadServiceConfigure(services, _configuration);
 
-            // enable local ip address for debugging in dev environment only.
-            LoadConfigurration.EnableLocalDebugging(_builder);
+            LoadPublicKeyConfig(services).GetAwaiter().GetResult();
+
+            services.AddControllers();
 
             // register service and classes
             RegisterServices(services, _environment);
 
-            //Kafka Service
-            RegisterKafkaService(services, _environment);
+            services.AddOcelot(_configuration).AddKubernetes();
 
-            // Register jwt token manager
-            // RegisterJWTTokenService(services, _configuration);
+            // enable local ip address for debugging in dev environment only.
+            LoadConfigurration.EnableLocalDebugging(_builder);
 
-            services.AddHostedService<DailyJob>();
 
+            var commonRegistry = new CommonRegistry(services, _environment, _configuration);
+
+            commonRegistry.ConfiguraCORS("EmstumGatewayPolicy");
+            commonRegistry.RegisterPerSessionClass();
+            commonRegistry.RegisterJWTTokenService();
+            commonRegistry.RegisterJsonHandler();
+            commonRegistry.RegisterKafkaProducerService();
+            commonRegistry.RegisterKafkaConsumerService();
         }
 
-        private void ConfiguraCORS(IServiceCollection services)
+        private async Task LoadPublicKeyConfig(IServiceCollection services)
         {
-            services.AddCors(options =>
-            {
-                options.AddPolicy("CorsPolicy",
-                    builder => builder
-                        .AllowAnyOrigin()
-                        .AllowAnyMethod()
-                        .AllowAnyHeader()
-                        .WithExposedHeaders("Content-Disposition") // if you want to expose specific headers
-                        .SetPreflightMaxAge(TimeSpan.FromMinutes(10))); // Cache the preflight response
-            });
+            var serviceProvider = services.BuildServiceProvider();
+            var microserviceRegistry = serviceProvider.GetRequiredService<MicroserviceRegistry>();
+
+            var gitHubConnector = new GitHubConnector();
+            var publicKeyDetail = await gitHubConnector.FetchTypedConfiguraitonAsync<PublicKeyDetail>(microserviceRegistry.PublicKeysConfigurationUrl);
+            services.AddSingleton(publicKeyDetail);
         }
 
         private void RegisterServices(IServiceCollection services, IWebHostEnvironment _environment)
         {
-            services.AddSingleton<MasterConnection>();
+            var serviceProvider = services.BuildServiceProvider();
+            var microserviceRegistry = serviceProvider.GetRequiredService<MicroserviceRegistry>();
+
+            services.AddSingleton<MasterConnection>(x =>
+                new MasterConnection(
+                    microserviceRegistry.DatabaseConfigurationUrl,
+                    x.GetRequiredService<IOptions<MasterDatabase>>()
+                )
+            );
             services.AddScoped((IServiceProvider x) => new CurrentSession
             {
                 Environment = ((!(_environment.EnvironmentName == "Development")) ? DefinedEnvironments.Production : DefinedEnvironments.Development)
@@ -83,67 +84,11 @@ namespace ApiGateway.Core.Configuration
             services.AddScoped<IKafkaServiceHandler, KafkaServiceHandler>();
         }
 
-        private void RegisterKafkaService(IServiceCollection services, IWebHostEnvironment _environment)
-        {
-
-            services.AddSingleton<IKafkaProducerService>(x =>
-                KafkaProducerService.GetInstance(
-                    ApplicationNames.EMSTUM,
-                    x.GetRequiredService<ProducerConfig>(),
-                    _builder.Environment
-                )
-            );
-
-            services.AddSingleton<IFetchGithubConfigurationService>(x =>
-            {
-                var githubConfigService = FetchGithubConfigurationService.getInstance().Init(ApplicationNames.EMSTUM, _environment);
-                var publicKeys = githubConfigService.GetConfiguration<PublicKeyDetail>();
-                services.Configure<PublicKeyDetail>(x =>
-                {
-                    new PublicKeyDetail
-                    {
-                        CompanyCode = publicKeys.CompanyCode,
-                        Key = publicKeys.Key,
-                        DefaulExpiryTimeInSeconds = publicKeys.DefaulExpiryTimeInSeconds,
-                        DefaultRefreshTokenExpiryTimeInSeconds = publicKeys.DefaultRefreshTokenExpiryTimeInSeconds,
-                        Issuer = publicKeys.Issuer
-                    };
-                });
-                RegisterJWTTokenService(services);
-                return githubConfigService;
-            });
-        }
-
         private void ConfiguraAppSettingFiles(ConfigurationManager _configuration, IWebHostEnvironment _environment)
         {
             _configuration.SetBasePath(_environment.ContentRootPath)
                             .AddJsonFile($"appsettings.{_environment.EnvironmentName}.json", optional: false, reloadOnChange: true)
                             .AddEnvironmentVariables();
-        }
-
-        private void RegisterJWTTokenService(IServiceCollection services)
-        {
-            PublicKeyDetail publicKeyDetail = services.BuildServiceProvider().GetRequiredService<PublicKeyDetail>();
-
-            services.AddAuthentication(x =>
-            {
-                x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-                        .AddJwtBearer(x =>
-                        {
-                            x.SaveToken = true;
-                            x.RequireHttpsMetadata = false;
-                            x.TokenValidationParameters = new TokenValidationParameters
-                            {
-                                ValidateIssuer = false,
-                                ValidateAudience = false,
-                                ValidateLifetime = true,
-                                ValidateIssuerSigningKey = true,
-                                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(publicKeyDetail.Key)),
-                                ClockSkew = TimeSpan.Zero
-                            };
-                        });
         }
 
         public void ConfigurePipeline(WebApplication app)
@@ -154,8 +99,9 @@ namespace ApiGateway.Core.Configuration
                 using (var scope = app.Services.CreateScope())
                 {
                     var kafkaServiceHandler = scope.ServiceProvider.GetRequiredService<IKafkaServiceHandler>();
-                    // Call your method here, for example:
-                    kafkaServiceHandler.ScheduledJobManager();
+                    var kafkaConsumerService = scope.ServiceProvider.GetRequiredService<IKafkaConsumerService>();
+
+                    kafkaConsumerService.SubscribeTopic(kafkaServiceHandler.DailyJobManager, nameof(KafkaTopicNames.DAILY_JOBS_MANAGER));
                 }
             });
 
@@ -170,6 +116,7 @@ namespace ApiGateway.Core.Configuration
                                Path.Combine(Directory.GetCurrentDirectory())),
                 RequestPath = "/bts/resources"
             });
+
             app.UseMiddleware<ExceptionHandlerMiddleware>();
             app.UseJwtAuthenticationMiddleware();
             app.UseAuthentication();
