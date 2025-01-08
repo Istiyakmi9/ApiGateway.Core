@@ -1,28 +1,22 @@
-﻿using ApiGateway.Core.Modal;
-using Bot.CoreBottomHalf.CommonModal;
+﻿using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.Services.Code;
-using Bt.Lib.Common.Service.MicroserviceHttpRequest;
 using Bt.Lib.Common.Service.Model;
 using Bt.Lib.Common.Service.Services;
-using Microsoft.Extensions.Options;
 using ModalLayer.Modal;
 using MySql.Data.MySqlClient;
-using Newtonsoft.Json;
 using System.Data;
 
 namespace ApiGateway.Core.Service
 {
     public class MasterConnection
     {
-        private readonly MasterDatabase _masterDatabase;
         private List<DbConfigModal> _dbConfigModal;
         private DatabaseConfiguration _databaseConfiguration;
         private readonly GitHubConnector _gitHubConnector;
         private readonly string _dbConfigUrl;
 
-        public MasterConnection(string url, IOptions<MasterDatabase> options)
+        public MasterConnection(string url)
         {
-            _masterDatabase = options.Value;
             _dbConfigUrl = url;
             _gitHubConnector = new GitHubConnector();
             _dbConfigModal = new List<DbConfigModal>();

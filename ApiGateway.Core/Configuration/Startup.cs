@@ -60,8 +60,7 @@ namespace ApiGateway.Core.Configuration
 
             services.AddSingleton<MasterConnection>(x =>
                 new MasterConnection(
-                    microserviceRegistry.DatabaseConfigurationUrl,
-                    x.GetRequiredService<IOptions<MasterDatabase>>()
+                    microserviceRegistry.DatabaseConfigurationUrl
                 )
             );
             services.AddScoped((IServiceProvider x) => new CurrentSession
