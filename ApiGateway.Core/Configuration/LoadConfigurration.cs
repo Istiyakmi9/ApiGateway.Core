@@ -1,7 +1,5 @@
-﻿using ApiGateway.Core.Modal;
-using Bt.Lib.Common.Service.Model;
+﻿using Bt.Lib.Common.Service.Model;
 using Microsoft.Extensions.Options;
-using ModalLayer;
 
 namespace ApiGateway.Core.Configuration
 {
@@ -9,15 +7,10 @@ namespace ApiGateway.Core.Configuration
     {
         public static void LoadServiceConfigure(IServiceCollection services, ConfigurationManager _configuration)
         {
-            services.Configure<MasterDatabase>(x => _configuration.GetSection(nameof(MasterDatabase)).Bind(x));
             services.Configure<MicroserviceRegistry>(x => _configuration.GetSection(nameof(MicroserviceRegistry)).Bind(x));
-            services.AddSingleton<MicroserviceRegistry>(resolver =>
+            services.AddSingleton(resolver =>
                 resolver.GetRequiredService<IOptions<MicroserviceRegistry>>().Value
             );
-            services.Configure(delegate (List<KafkaServiceConfig> x)
-            {
-                _configuration.GetSection("KafkaServiceConfig").Bind(x);
-            });
         }
 
         public static void EnableLocalDebugging(WebApplicationBuilder builder)
