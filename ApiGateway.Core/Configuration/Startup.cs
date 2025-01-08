@@ -31,8 +31,6 @@ namespace ApiGateway.Core.Configuration
             // load configuration from appsettings.{env}.json file and mapped into classes
             LoadConfigurration.LoadServiceConfigure(services, _configuration);
 
-            LoadPublicKeyConfig(services).GetAwaiter().GetResult();
-
             services.AddControllers();
 
             // register service and classes
@@ -46,22 +44,13 @@ namespace ApiGateway.Core.Configuration
 
             var commonRegistry = new CommonRegistry(services, _environment, _configuration);
 
-            commonRegistry.ConfiguraCORS("EmstumGatewayPolicy");
-            commonRegistry.RegisterPerSessionClass();
-            commonRegistry.RegisterJWTTokenService();
-            commonRegistry.RegisterJsonHandler();
-            commonRegistry.RegisterKafkaProducerService();
-            commonRegistry.RegisterKafkaConsumerService();
-        }
-
-        private async Task LoadPublicKeyConfig(IServiceCollection services)
-        {
-            var serviceProvider = services.BuildServiceProvider();
-            var microserviceRegistry = serviceProvider.GetRequiredService<MicroserviceRegistry>();
-
-            var gitHubConnector = new GitHubConnector();
-            var publicKeyDetail = await gitHubConnector.FetchTypedConfiguraitonAsync<PublicKeyDetail>(microserviceRegistry.PublicKeysConfigurationUrl);
-            services.AddSingleton(publicKeyDetail);
+            commonRegistry
+            .AddCORS("EmstumGatewayPolicy")
+            .AddKafkaConsumerService()
+            .AddKafkaProducerService()
+            .AddPublicKeyConfiguration()
+            .AddJWTSupport()
+            .AddCurrentSessionClass();
         }
 
         private void RegisterServices(IServiceCollection services, IWebHostEnvironment _environment)
