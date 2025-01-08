@@ -1,4 +1,5 @@
-﻿using Bt.Lib.Common.Service.Model;
+﻿using ApiGateway.Core.Modal;
+using Bt.Lib.Common.Service.Model;
 using Microsoft.Extensions.Options;
 
 namespace ApiGateway.Core.Configuration

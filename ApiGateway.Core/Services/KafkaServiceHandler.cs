@@ -1,4 +1,5 @@
 ﻿using ApiGateway.Core.Interface;
+using ApiGateway.Core.Modal;
 using ApiGateway.Core.Service;
 using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
@@ -24,13 +25,13 @@ namespace ApiGateway.Core.Services
         public KafkaServiceHandler(
             ILogger<KafkaServiceHandler> logger,
             IOptions<List<KafkaServiceConfig>> kafkaOptions,
-            IOptions<MicroserviceRegistry> microserviceOptions,
+            MicroserviceRegistry microserviceRegistry,
             RequestMicroservice requestMicroservice,
             MasterConnection masterConnection)
         {
             _logger = logger;
             _kafkaServiceConfig = kafkaOptions.Value;
-            _microserviceRegistry = microserviceOptions.Value;
+            _microserviceRegistry = microserviceRegistry;
             _requestMicroservice = requestMicroservice;
             _masterConnection = masterConnection;
         }
