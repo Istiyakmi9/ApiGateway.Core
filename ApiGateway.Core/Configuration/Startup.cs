@@ -11,7 +11,6 @@ using Bt.Lib.Common.Service.Middlewares;
 using Bt.Lib.Common.Service.Model;
 using Bt.Lib.Common.Service.Services;
 using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Options;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
 using Ocelot.Provider.Kubernetes;
@@ -45,7 +44,7 @@ namespace ApiGateway.Core.Configuration
             var commonRegistry = new CommonRegistry(services, _environment, _configuration);
 
             commonRegistry
-            .AddCORS("EmstumGatewayPolicy")
+            .AddCORS("EmstumCORS")
             .AddKafkaConsumerService()
             .AddKafkaProducerService()
             .AddPublicKeyConfiguration()
@@ -94,7 +93,7 @@ namespace ApiGateway.Core.Configuration
             });
 
             // Configure the HTTP request pipeline.
-            app.UseCors("CorsPolicy");
+            app.UseCors("EmstumCORS");
 
             app.UseRouting();
 
