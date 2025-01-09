@@ -80,17 +80,17 @@ namespace ApiGateway.Core.Configuration
 
         public void ConfigurePipeline(WebApplication app)
         {
-            var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
-            lifetime.ApplicationStarted.Register(() =>
-            {
-                using (var scope = app.Services.CreateScope())
-                {
-                    var kafkaServiceHandler = scope.ServiceProvider.GetRequiredService<IKafkaServiceHandler>();
-                    var kafkaConsumerService = scope.ServiceProvider.GetRequiredService<IKafkaConsumerService>();
+            //var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+            //lifetime.ApplicationStarted.Register(() =>
+            //{
+            //    using (var scope = app.Services.CreateScope())
+            //    {
+            //        var kafkaServiceHandler = scope.ServiceProvider.GetRequiredService<IKafkaServiceHandler>();
+            //        var kafkaConsumerService = scope.ServiceProvider.GetRequiredService<IKafkaConsumerService>();
 
-                    kafkaConsumerService.SubscribeTopic(kafkaServiceHandler.DailyJobManager, nameof(KafkaTopicNames.DAILY_JOBS_MANAGER));
-                }
-            });
+            //        kafkaConsumerService.SubscribeTopic(kafkaServiceHandler.DailyJobManager, nameof(KafkaTopicNames.DAILY_JOBS_MANAGER));
+            //    }
+            //});
 
             // Configure the HTTP request pipeline.
             app.UseCors("EmstumCORS");
