@@ -14,17 +14,14 @@ namespace ApiGateway.Core.MIddleware
         private readonly RequestDelegate _next;
         private readonly string TokenName = "Authorization";
         private readonly MasterConnection _masterConnection;
-        private readonly ILogger<JwtAuthenticationMiddleware> _logger;
         private readonly PublicKeyDetail _publicKeyDetail;
 
         public JwtAuthenticationMiddleware(RequestDelegate next,
             MasterConnection masterConnection,
-            ILogger<JwtAuthenticationMiddleware> logger,
             PublicKeyDetail publicKeyDetail)
         {
             _next = next;
             _masterConnection = masterConnection;
-            _logger = logger;
             _publicKeyDetail = publicKeyDetail;
         }
 
@@ -44,17 +41,14 @@ namespace ApiGateway.Core.MIddleware
 
                 Parallel.ForEach(context.Request.Headers, header =>
                 {
-                    _logger.LogInformation($"Reading: {header.Key}");
                     if (header.Value.FirstOrDefault() != null)
                     {
                         if (header.Key == TokenName)
                         {
-                            _logger.LogInformation($"{TokenName}: {header.Value.FirstOrDefault()}");
                             authorizationToken = header.Value.FirstOrDefault();
                         }
                         if (header.Key.ToLower() == "companycode")
                         {
-                            _logger.LogInformation($"CompanyCode: {header.Value.FirstOrDefault()}");
                             companyCode = header.Value.FirstOrDefault();
                         }
                     }
@@ -95,7 +89,6 @@ namespace ApiGateway.Core.MIddleware
                     await ConfigDatabase(context, companyCode);
                 }
 
-                _logger.LogInformation($"[REQUEST HEADER]: {JsonConvert.SerializeObject(context.Request.Headers["database"])}");
                 await _next(context);
             }
             catch (Exception)

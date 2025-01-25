@@ -7,8 +7,6 @@ using Bot.CoreBottomHalf.CommonModal.Kafka;
 using Bt.Lib.PipelineConfig.MicroserviceHttpRequest;
 using Bt.Lib.PipelineConfig.Model;
 using Confluent.Kafka;
-using Microsoft.Extensions.Options;
-using ModalLayer;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
 
@@ -16,21 +14,15 @@ namespace ApiGateway.Core.Services
 {
     public class KafkaServiceHandler : IKafkaServiceHandler
     {
-        private readonly ILogger<KafkaServiceHandler> _logger;
-        private readonly List<KafkaServiceConfig> _kafkaServiceConfig;
         private readonly RequestMicroservice _requestMicroservice;
         private readonly MicroserviceRegistry _microserviceRegistry;
         private readonly MasterConnection _masterConnection;
 
         public KafkaServiceHandler(
-            ILogger<KafkaServiceHandler> logger,
-            IOptions<List<KafkaServiceConfig>> kafkaOptions,
             MicroserviceRegistry microserviceRegistry,
             RequestMicroservice requestMicroservice,
             MasterConnection masterConnection)
         {
-            _logger = logger;
-            _kafkaServiceConfig = kafkaOptions.Value;
             _microserviceRegistry = microserviceRegistry;
             _requestMicroservice = requestMicroservice;
             _masterConnection = masterConnection;
@@ -74,7 +66,7 @@ namespace ApiGateway.Core.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError($"[DAIALY JOB ERROR]: Got error: {ex.Message}");
+                    throw HiringBellException.ThrowBadRequest($"[DAIALY JOB ERROR]: Got error: {ex.Message}");
                 }
             }
         }
