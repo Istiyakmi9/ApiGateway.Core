@@ -4,8 +4,8 @@ using ApiGateway.Core.Service;
 using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.HtmlTemplateModel;
 using Bot.CoreBottomHalf.CommonModal.Kafka;
-using Bt.Lib.Common.Service.MicroserviceHttpRequest;
-using Bt.Lib.Common.Service.Model;
+using Bt.Lib.PipelineConfig.MicroserviceHttpRequest;
+using Bt.Lib.PipelineConfig.Model;
 using Confluent.Kafka;
 using Microsoft.Extensions.Options;
 using ModalLayer;
@@ -46,7 +46,7 @@ namespace ApiGateway.Core.Services
                 await _masterConnection.LoadMasterConnection();
             }
 
-            List<DbConfigModal> dbConfig = _masterConnection.GetDatabaseConfiguration;
+            List<DbConfig> dbConfig = _masterConnection.GetDatabaseConfiguration;
 
             foreach (var x in dbConfig)
             {
@@ -79,7 +79,7 @@ namespace ApiGateway.Core.Services
             }
         }
 
-        private async Task<MicroserviceRequest> CreateRequestObject(string payloadMessage, DbConfigModal dbConfig)
+        private async Task<MicroserviceRequest> CreateRequestObject(string payloadMessage, DbConfig dbConfig)
         {
             MicroserviceRequest microserviceRequest = MicroserviceRequest.Builder(string.Empty);
             microserviceRequest.Database = dbConfig;
@@ -96,7 +96,7 @@ namespace ApiGateway.Core.Services
             return microserviceRequest;
         }
 
-        private async Task<string> GetJwtToken(DbConfigModal dbConfig)
+        private async Task<string> GetJwtToken(DbConfig dbConfig)
         {
             MicroserviceRequest microserviceRequest = MicroserviceRequest.Builder(string.Empty);
             microserviceRequest.Url = _microserviceRegistry.GenerateJWtToken;

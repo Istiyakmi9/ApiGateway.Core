@@ -5,11 +5,9 @@ using ApiGateway.Core.Service;
 using ApiGateway.Core.Services;
 using Bot.CoreBottomHalf.CommonModal;
 using Bot.CoreBottomHalf.CommonModal.Enums;
-using Bt.Lib.Common.Service.KafkaService.interfaces;
-using Bt.Lib.Common.Service.MicroserviceHttpRequest;
-using Bt.Lib.Common.Service.Middlewares;
-using Bt.Lib.Common.Service.Model;
-using Bt.Lib.Common.Service.Services;
+using Bt.Lib.PipelineConfig.MicroserviceHttpRequest;
+using Bt.Lib.PipelineConfig.Middlewares;
+using Bt.Lib.PipelineConfig.Services;
 using Microsoft.Extensions.FileProviders;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
@@ -41,9 +39,9 @@ namespace ApiGateway.Core.Configuration
             LoadConfigurration.EnableLocalDebugging(_builder);
 
 
-            var commonRegistry = new CommonRegistry(services, _environment, _configuration);
+            var pipelineRegistry = new PipelineRegistry(services, _environment, _configuration);
 
-            commonRegistry
+            pipelineRegistry
             .AddCORS("EmstumCORS")
             .AddKafkaConsumerService()
             .AddKafkaProducerService()

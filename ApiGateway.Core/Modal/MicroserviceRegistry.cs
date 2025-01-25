@@ -1,4 +1,4 @@
-﻿using Bt.Lib.Common.Service.Model;
+﻿using Bt.Lib.PipelineConfig.Model;
 
 namespace ApiGateway.Core.Modal
 {

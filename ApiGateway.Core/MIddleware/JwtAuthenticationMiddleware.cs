@@ -1,6 +1,6 @@
 ﻿using ApiGateway.Core.Service;
 using Bot.CoreBottomHalf.CommonModal;
-using Bt.Lib.Common.Service.Model;
+using Bt.Lib.PipelineConfig.Model;
 using Microsoft.IdentityModel.Tokens;
 using ModalLayer.Modal;
 using Newtonsoft.Json;
@@ -113,7 +113,7 @@ namespace ApiGateway.Core.MIddleware
                 throw HiringBellException.ThrowBadRequest("Invalid company code found.");
             }
 
-            DbConfigModal databaseConfiguration = await _masterConnection.GetDatabaseBasedOnCode(companyName, code);
+            DbConfig databaseConfiguration = await _masterConnection.GetDatabaseBasedOnCode(companyName, code);
 
             context.Request.Headers.Add("database", JsonConvert.SerializeObject(databaseConfiguration));
             context.Request.Headers.Add("JBot", "[]");
@@ -132,7 +132,7 @@ namespace ApiGateway.Core.MIddleware
                 throw HiringBellException.ThrowBadRequest("Invalid company code found.");
             }
 
-            DbConfigModal databaseConfiguration = await _masterConnection.GetDatabaseBasedOnCode(companyName, code);
+            DbConfig databaseConfiguration = await _masterConnection.GetDatabaseBasedOnCode(companyName, code);
 
             context.Request.Headers.Add("userDetail", user);
             context.Request.Headers.Add("sid", sid);

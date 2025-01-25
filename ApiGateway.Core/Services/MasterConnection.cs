@@ -1,7 +1,6 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
 using BottomhalfCore.Services.Code;
-using Bt.Lib.Common.Service.Model;
-using Bt.Lib.Common.Service.Services;
+using Bt.Lib.PipelineConfig.Services;
 using ModalLayer.Modal;
 using MySql.Data.MySqlClient;
 using System.Data;
@@ -10,8 +9,7 @@ namespace ApiGateway.Core.Service
 {
     public class MasterConnection
     {
-        private List<DbConfigModal> _dbConfigModal;
-        private DatabaseConfiguration _databaseConfiguration;
+        private List<DbConfig> _dbConfig;
         private readonly GitHubConnector _gitHubConnector;
         private readonly string _dbConfigUrl;
 
@@ -19,17 +17,16 @@ namespace ApiGateway.Core.Service
         {
             _dbConfigUrl = url;
             _gitHubConnector = new GitHubConnector();
-            _dbConfigModal = new List<DbConfigModal>();
+            _dbConfig = new List<DbConfig>();
             LoadMasterConnection().GetAwaiter().GetResult();
         }
 
-        public List<DbConfigModal> GetDatabaseConfiguration { get { return _dbConfigModal; } }
+        public List<DbConfig> GetDatabaseConfiguration { get { return _dbConfig; } }
 
         public async Task<bool> LoadMasterConnection()
         {
             var flag = false;
-            _databaseConfiguration = await _gitHubConnector.FetchTypedConfiguraitonAsync<DatabaseConfiguration>(_dbConfigUrl);
-            var cs = DatabaseConfiguration.BuildConnectionString(_databaseConfiguration);
+            var cs = await _gitHubConnector.FetchTypedConfiguraitonAsync<string>(_dbConfigUrl);
 
             using (var connection = new MySqlConnection(cs))
             {
@@ -52,7 +49,7 @@ namespace ApiGateway.Core.Service
                                 throw new Exception("Fail to load the master data");
                             }
 
-                            _dbConfigModal = Converter.ToList<DbConfigModal>(dataSet.Tables[0]);
+                            _dbConfig = Converter.ToList<DbConfig>(dataSet.Tables[0]);
                             flag = true;
                         }
                     }
@@ -65,22 +62,22 @@ namespace ApiGateway.Core.Service
             return flag;
         }
 
-        public async Task<DbConfigModal> GetDatabaseBasedOnCode(string orgCode, string companyCode)
+        public async Task<DbConfig> GetDatabaseBasedOnCode(string orgCode, string companyCode)
         {
-            DbConfigModal configuration = null;
-            if (_dbConfigModal != null)
+            DbConfig configuration = null;
+            if (_dbConfig != null)
             {
-                configuration = _dbConfigModal!.FirstOrDefault(x => x.OrganizationCode == orgCode && x.Code == companyCode);
+                configuration = _dbConfig!.FirstOrDefault(x => x.OrganizationCode == orgCode && x.Code == companyCode);
                 if (configuration == null)
                 {
                     await LoadMasterConnection();
-                    if (_dbConfigModal == null)
+                    if (_dbConfig == null)
                     {
                         throw HiringBellException.ThrowBadRequest("Master data configuration detail not found");
                     }
                     else
                     {
-                        configuration = _dbConfigModal!.FirstOrDefault(x => x.OrganizationCode == orgCode && x.Code == companyCode);
+                        configuration = _dbConfig!.FirstOrDefault(x => x.OrganizationCode == orgCode && x.Code == companyCode);
                         if (configuration == null)
                         {
                             throw HiringBellException.ThrowBadRequest("Invalid organization access. Please contact to admin.");
@@ -92,16 +89,16 @@ namespace ApiGateway.Core.Service
             return configuration;
         }
 
-        public async Task<List<DbConfigModal>> GetAllConnections()
+        public async Task<List<DbConfig>> GetAllConnections()
         {
-            if (_dbConfigModal == null)
+            if (_dbConfig == null)
             {
                 await LoadMasterConnection();
-                if (_dbConfigModal == null)
+                if (_dbConfig == null)
                     throw new Exception("Master data configuration detail not found");
             }
 
-            return _dbConfigModal;
+            return _dbConfig;
         }
     }
 }
