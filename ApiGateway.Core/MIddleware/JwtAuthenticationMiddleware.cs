@@ -77,7 +77,7 @@ namespace ApiGateway.Core.MIddleware
                         }, out SecurityToken validatedToken);
 
                         JwtSecurityToken securityToken = handler.ReadToken(token) as JwtSecurityToken;
-                        ConfigDatabase(context, securityToken);
+                        await ConfigDatabase(context, securityToken);
                     }
                     else if (!string.IsNullOrEmpty(companyCode))
                     {
