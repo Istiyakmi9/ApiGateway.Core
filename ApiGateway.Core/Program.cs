@@ -1,4 +1,4 @@
-using ApiGateway.Core.Configuration;
+using ApiGateway.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 

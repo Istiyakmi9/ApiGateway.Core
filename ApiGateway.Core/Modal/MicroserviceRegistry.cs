@@ -9,5 +9,6 @@ namespace ApiGateway.Core.Modal
         public string UpdateBulkDeclarationDetail { get; set; }
         public string CalculateSalaryDetail { get; set; }
         public string GetEmployeeDeclarationDetailById { get; set; }
+        public string ConnectionsGetAll { set; get; }
     }
 }

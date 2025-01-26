@@ -1,4 +1,5 @@
-﻿using ApiGateway.Core.Interface;
+﻿using ApiGateway.Core.Configuration;
+using ApiGateway.Core.Interface;
 using ApiGateway.Core.MIddleware;
 using ApiGateway.Core.Modal;
 using ApiGateway.Core.Service;
@@ -13,7 +14,7 @@ using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
 using Ocelot.Provider.Kubernetes;
 
-namespace ApiGateway.Core.Configuration
+namespace ApiGateway.Core
 {
     public class Startup(WebApplicationBuilder _builder)
     {
@@ -29,6 +30,7 @@ namespace ApiGateway.Core.Configuration
             LoadConfigurration.LoadServiceConfigure(services, _configuration);
 
             services.AddControllers();
+            services.AddHttpContextAccessor();
 
             // register service and classes
             RegisterServices(services, _environment);
@@ -52,17 +54,20 @@ namespace ApiGateway.Core.Configuration
 
         private void RegisterServices(IServiceCollection services, IWebHostEnvironment _environment)
         {
+            services.AddSingleton<RequestMicroservice>();
             var serviceProvider = services.BuildServiceProvider();
             var microserviceRegistry = serviceProvider.GetRequiredService<MicroserviceRegistry>();
+            var requestMicroservice = serviceProvider.GetRequiredService<RequestMicroservice>();
 
-            services.AddSingleton<MasterConnection>(x =>
+            services.AddSingleton(x =>
                 new MasterConnection(
-                    microserviceRegistry.DatabaseConfigurationUrl
+                    microserviceRegistry.ConnectionsGetAll,
+                    requestMicroservice
                 )
             );
-            services.AddScoped((IServiceProvider x) => new CurrentSession
+            services.AddScoped((x) => new CurrentSession
             {
-                Environment = ((!(_environment.EnvironmentName == "Development")) ? DefinedEnvironments.Production : DefinedEnvironments.Development)
+                Environment = !(_environment.EnvironmentName == "Development") ? DefinedEnvironments.Production : DefinedEnvironments.Development
             });
             services.AddScoped<RequestMicroservice>();
             services.AddSingleton<ApplicationConfiguration>();

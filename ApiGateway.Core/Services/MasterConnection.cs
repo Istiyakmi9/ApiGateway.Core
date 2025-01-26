@@ -1,22 +1,21 @@
 ﻿using Bot.CoreBottomHalf.CommonModal;
-using BottomhalfCore.Services.Code;
+using Bt.Lib.PipelineConfig.MicroserviceHttpRequest;
+using Bt.Lib.PipelineConfig.Model;
 using Bt.Lib.PipelineConfig.Services;
 using ModalLayer.Modal;
-using MySql.Data.MySqlClient;
-using System.Data;
 
 namespace ApiGateway.Core.Service
 {
     public class MasterConnection
     {
         private List<DbConfig> _dbConfig;
-        private readonly GitHubConnector _gitHubConnector;
         private readonly string _dbConfigUrl;
+        private readonly RequestMicroservice _requestMicroservice;
 
-        public MasterConnection(string url)
+        public MasterConnection(string url, RequestMicroservice requestMicroservice)
         {
             _dbConfigUrl = url;
-            _gitHubConnector = new GitHubConnector();
+            _requestMicroservice = requestMicroservice;
             _dbConfig = new List<DbConfig>();
             LoadMasterConnection().GetAwaiter().GetResult();
         }
@@ -25,41 +24,15 @@ namespace ApiGateway.Core.Service
 
         public async Task<bool> LoadMasterConnection()
         {
-            var flag = false;
-            var cs = await _gitHubConnector.FetchTypedConfiguraitonAsync<string>(_dbConfigUrl);
-
-            using (var connection = new MySqlConnection(cs))
+            try
             {
-                using (MySqlCommand command = new MySqlCommand())
-                {
-                    try
-                    {
-                        command.Connection = connection;
-                        command.CommandType = CommandType.Text;
-                        command.CommandText = "select * from database_connections";
-                        using (MySqlDataAdapter dataAdapter = new MySqlDataAdapter())
-                        {
-                            var dataSet = new DataSet();
-                            connection.Open();
-                            dataAdapter.SelectCommand = command;
-                            dataAdapter.Fill(dataSet);
-
-                            if (dataSet.Tables == null || dataSet.Tables.Count != 1 || dataSet.Tables[0].Rows.Count == 0)
-                            {
-                                throw new Exception("Fail to load the master data");
-                            }
-
-                            _dbConfig = Converter.ToList<DbConfig>(dataSet.Tables[0]);
-                            flag = true;
-                        }
-                    }
-                    catch
-                    {
-                        throw;
-                    }
-                }
+                _dbConfig = await _requestMicroservice.GetRequest<List<DbConfig>>(MicroserviceRequest.Builder(_dbConfigUrl));
+                return true;
             }
-            return flag;
+            catch
+            {
+                throw HiringBellException.ThrowBadRequest("Fail to load master database collection");
+            }
         }
 
         public async Task<DbConfig> GetDatabaseBasedOnCode(string orgCode, string companyCode)
@@ -87,18 +60,6 @@ namespace ApiGateway.Core.Service
             }
 
             return configuration;
-        }
-
-        public async Task<List<DbConfig>> GetAllConnections()
-        {
-            if (_dbConfig == null)
-            {
-                await LoadMasterConnection();
-                if (_dbConfig == null)
-                    throw new Exception("Master data configuration detail not found");
-            }
-
-            return _dbConfig;
         }
     }
 }
